@@ -35,13 +35,13 @@ ScreenGui.Name = "AbilityGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Main Frame
+-- Main Frame (Lebih kecil dan compact)
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -120)
-MainFrame.Size = UDim2.new(0, 300, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -90)
+MainFrame.Size = UDim2.new(0, 280, 0, 180)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -54,7 +54,7 @@ TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 TopBar.BorderSizePixel = 0
-TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.Size = UDim2.new(1, 0, 0, 32)
 
 local TopCorner = Instance.new("UICorner")
 TopCorner.CornerRadius = UDim.new(0, 10)
@@ -69,7 +69,7 @@ TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.Text = "Ability"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 16
+TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Minimize Button
@@ -77,15 +77,15 @@ MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Parent = TopBar
 MinimizeButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
 MinimizeButton.BorderSizePixel = 0
-MinimizeButton.Position = UDim2.new(1, -65, 0.5, -10)
-MinimizeButton.Size = UDim2.new(0, 25, 0, 20)
+MinimizeButton.Position = UDim2.new(1, -60, 0.5, -9)
+MinimizeButton.Size = UDim2.new(0, 23, 0, 18)
 MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeButton.TextSize = 18
+MinimizeButton.TextSize = 16
 
 local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 5)
+MinCorner.CornerRadius = UDim.new(0, 4)
 MinCorner.Parent = MinimizeButton
 
 -- Exit Button
@@ -93,34 +93,34 @@ ExitButton.Name = "ExitButton"
 ExitButton.Parent = TopBar
 ExitButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 ExitButton.BorderSizePixel = 0
-ExitButton.Position = UDim2.new(1, -35, 0.5, -10)
-ExitButton.Size = UDim2.new(0, 25, 0, 20)
+ExitButton.Position = UDim2.new(1, -32, 0.5, -9)
+ExitButton.Size = UDim2.new(0, 23, 0, 18)
 ExitButton.Font = Enum.Font.GothamBold
 ExitButton.Text = "X"
 ExitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ExitButton.TextSize = 14
+ExitButton.TextSize = 13
 
 local ExitCorner = Instance.new("UICorner")
-ExitCorner.CornerRadius = UDim.new(0, 5)
+ExitCorner.CornerRadius = UDim.new(0, 4)
 ExitCorner.Parent = ExitButton
 
 -- Content Frame
 ContentFrame.Name = "ContentFrame"
 ContentFrame.Parent = MainFrame
 ContentFrame.BackgroundTransparency = 1
-ContentFrame.Position = UDim2.new(0, 0, 0, 35)
-ContentFrame.Size = UDim2.new(1, 0, 1, -35)
+ContentFrame.Position = UDim2.new(0, 0, 0, 32)
+ContentFrame.Size = UDim2.new(1, 0, 1, -32)
 
 -- Walkspeed Label
 WalkspeedLabel.Name = "WalkspeedLabel"
 WalkspeedLabel.Parent = ContentFrame
 WalkspeedLabel.BackgroundTransparency = 1
-WalkspeedLabel.Position = UDim2.new(0, 20, 0, 20)
-WalkspeedLabel.Size = UDim2.new(0, 120, 0, 25)
+WalkspeedLabel.Position = UDim2.new(0, 15, 0, 10)
+WalkspeedLabel.Size = UDim2.new(0, 100, 0, 20)
 WalkspeedLabel.Font = Enum.Font.Gotham
 WalkspeedLabel.Text = "Walkspeed:"
 WalkspeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-WalkspeedLabel.TextSize = 14
+WalkspeedLabel.TextSize = 13
 WalkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Speed Display
@@ -128,12 +128,12 @@ SpeedDisplay.Name = "SpeedDisplay"
 SpeedDisplay.Parent = ContentFrame
 SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SpeedDisplay.BorderSizePixel = 0
-SpeedDisplay.Position = UDim2.new(0, 20, 0, 50)
-SpeedDisplay.Size = UDim2.new(0, 80, 0, 30)
+SpeedDisplay.Position = UDim2.new(0, 15, 0, 32)
+SpeedDisplay.Size = UDim2.new(0, 70, 0, 28)
 SpeedDisplay.Font = Enum.Font.GothamBold
 SpeedDisplay.Text = tostring(currentSpeed)
 SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedDisplay.TextSize = 16
+SpeedDisplay.TextSize = 15
 
 local SpeedCorner = Instance.new("UICorner")
 SpeedCorner.CornerRadius = UDim.new(0, 5)
@@ -144,12 +144,12 @@ MinusButton.Name = "MinusButton"
 MinusButton.Parent = ContentFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 MinusButton.BorderSizePixel = 0
-MinusButton.Position = UDim2.new(0, 110, 0, 50)
-MinusButton.Size = UDim2.new(0, 35, 0, 30)
+MinusButton.Position = UDim2.new(0, 90, 0, 32)
+MinusButton.Size = UDim2.new(0, 32, 0, 28)
 MinusButton.Font = Enum.Font.GothamBold
 MinusButton.Text = "-"
 MinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinusButton.TextSize = 20
+MinusButton.TextSize = 18
 
 local MinusCorner = Instance.new("UICorner")
 MinusCorner.CornerRadius = UDim.new(0, 5)
@@ -160,12 +160,12 @@ PlusButton.Name = "PlusButton"
 PlusButton.Parent = ContentFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 PlusButton.BorderSizePixel = 0
-PlusButton.Position = UDim2.new(0, 155, 0, 50)
-PlusButton.Size = UDim2.new(0, 35, 0, 30)
+PlusButton.Position = UDim2.new(0, 127, 0, 32)
+PlusButton.Size = UDim2.new(0, 32, 0, 28)
 PlusButton.Font = Enum.Font.GothamBold
 PlusButton.Text = "+"
 PlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-PlusButton.TextSize = 20
+PlusButton.TextSize = 18
 
 local PlusCorner = Instance.new("UICorner")
 PlusCorner.CornerRadius = UDim.new(0, 5)
@@ -175,12 +175,12 @@ PlusCorner.Parent = PlusButton
 InfiniteJumpLabel.Name = "InfiniteJumpLabel"
 InfiniteJumpLabel.Parent = ContentFrame
 InfiniteJumpLabel.BackgroundTransparency = 1
-InfiniteJumpLabel.Position = UDim2.new(0, 20, 0, 100)
-InfiniteJumpLabel.Size = UDim2.new(0, 120, 0, 25)
+InfiniteJumpLabel.Position = UDim2.new(0, 15, 0, 68)
+InfiniteJumpLabel.Size = UDim2.new(0, 100, 0, 20)
 InfiniteJumpLabel.Font = Enum.Font.Gotham
 InfiniteJumpLabel.Text = "Infinite Jump:"
 InfiniteJumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfiniteJumpLabel.TextSize = 14
+InfiniteJumpLabel.TextSize = 13
 InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Infinite Jump Button
@@ -188,12 +188,12 @@ InfiniteJumpButton.Name = "InfiniteJumpButton"
 InfiniteJumpButton.Parent = ContentFrame
 InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
-InfiniteJumpButton.Position = UDim2.new(0, 20, 0, 130)
-InfiniteJumpButton.Size = UDim2.new(0, 80, 0, 30)
+InfiniteJumpButton.Position = UDim2.new(0, 15, 0, 90)
+InfiniteJumpButton.Size = UDim2.new(0, 70, 0, 28)
 InfiniteJumpButton.Font = Enum.Font.GothamBold
 InfiniteJumpButton.Text = "OFF"
 InfiniteJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfiniteJumpButton.TextSize = 14
+InfiniteJumpButton.TextSize = 13
 
 local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
@@ -203,12 +203,12 @@ JumpCorner.Parent = InfiniteJumpButton
 WarningLabel.Name = "WarningLabel"
 WarningLabel.Parent = ContentFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 20, 0, 175)
-WarningLabel.Size = UDim2.new(1, -40, 0, 20)
+WarningLabel.Position = UDim2.new(0, 15, 0, 125)
+WarningLabel.Size = UDim2.new(1, -30, 0, 18)
 WarningLabel.Font = Enum.Font.GothamBold
 WarningLabel.Text = ""
 WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-WarningLabel.TextSize = 12
+WarningLabel.TextSize = 11
 WarningLabel.Visible = false
 
 -- Minimized Button (RGB Border)
@@ -257,11 +257,11 @@ end
 
 -- Button Functions
 PlusButton.MouseButton1Click:Connect(function()
-    if currentSpeed < 50 then
+    if currentSpeed < 100 then
         currentSpeed = currentSpeed + 1
         updateSpeed()
     else
-        showWarning("Cannot be more than 50")
+        showWarning("Cannot be more than 100")
     end
 end)
 
