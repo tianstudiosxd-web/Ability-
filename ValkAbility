@@ -1,0 +1,319 @@
+-- Universal Roblox Ability Script
+-- Walkspeed & Infinite Jump GUI
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local UserInputService = game:GetService("UserInputService")
+
+-- Variables
+local currentSpeed = 16
+local infiniteJumpEnabled = false
+local isMinimized = false
+
+-- GUI Creation
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TopBar = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local MinimizeButton = Instance.new("TextButton")
+local ExitButton = Instance.new("TextButton")
+local ContentFrame = Instance.new("Frame")
+local WalkspeedLabel = Instance.new("TextLabel")
+local SpeedDisplay = Instance.new("TextLabel")
+local MinusButton = Instance.new("TextButton")
+local PlusButton = Instance.new("TextButton")
+local InfiniteJumpLabel = Instance.new("TextLabel")
+local InfiniteJumpButton = Instance.new("TextButton")
+local WarningLabel = Instance.new("TextLabel")
+local MinimizedButton = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+local UIStroke = Instance.new("UIStroke")
+
+-- Properties
+ScreenGui.Name = "AbilityGUI"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -120)
+MainFrame.Size = UDim2.new(0, 300, 0, 240)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Top Bar
+TopBar.Name = "TopBar"
+TopBar.Parent = MainFrame
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+TopBar.BorderSizePixel = 0
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.Parent = TopBar
+
+-- Title
+TitleLabel.Name = "Title"
+TitleLabel.Parent = TopBar
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "Ability"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 16
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Minimize Button
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Parent = TopBar
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Position = UDim2.new(1, -65, 0.5, -10)
+MinimizeButton.Size = UDim2.new(0, 25, 0, 20)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextSize = 18
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 5)
+MinCorner.Parent = MinimizeButton
+
+-- Exit Button
+ExitButton.Name = "ExitButton"
+ExitButton.Parent = TopBar
+ExitButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+ExitButton.BorderSizePixel = 0
+ExitButton.Position = UDim2.new(1, -35, 0.5, -10)
+ExitButton.Size = UDim2.new(0, 25, 0, 20)
+ExitButton.Font = Enum.Font.GothamBold
+ExitButton.Text = "X"
+ExitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ExitButton.TextSize = 14
+
+local ExitCorner = Instance.new("UICorner")
+ExitCorner.CornerRadius = UDim.new(0, 5)
+ExitCorner.Parent = ExitButton
+
+-- Content Frame
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 0, 0, 35)
+ContentFrame.Size = UDim2.new(1, 0, 1, -35)
+
+-- Walkspeed Label
+WalkspeedLabel.Name = "WalkspeedLabel"
+WalkspeedLabel.Parent = ContentFrame
+WalkspeedLabel.BackgroundTransparency = 1
+WalkspeedLabel.Position = UDim2.new(0, 20, 0, 20)
+WalkspeedLabel.Size = UDim2.new(0, 120, 0, 25)
+WalkspeedLabel.Font = Enum.Font.Gotham
+WalkspeedLabel.Text = "Walkspeed:"
+WalkspeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+WalkspeedLabel.TextSize = 14
+WalkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Speed Display
+SpeedDisplay.Name = "SpeedDisplay"
+SpeedDisplay.Parent = ContentFrame
+SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+SpeedDisplay.BorderSizePixel = 0
+SpeedDisplay.Position = UDim2.new(0, 20, 0, 50)
+SpeedDisplay.Size = UDim2.new(0, 80, 0, 30)
+SpeedDisplay.Font = Enum.Font.GothamBold
+SpeedDisplay.Text = tostring(currentSpeed)
+SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedDisplay.TextSize = 16
+
+local SpeedCorner = Instance.new("UICorner")
+SpeedCorner.CornerRadius = UDim.new(0, 5)
+SpeedCorner.Parent = SpeedDisplay
+
+-- Minus Button
+MinusButton.Name = "MinusButton"
+MinusButton.Parent = ContentFrame
+MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+MinusButton.BorderSizePixel = 0
+MinusButton.Position = UDim2.new(0, 110, 0, 50)
+MinusButton.Size = UDim2.new(0, 35, 0, 30)
+MinusButton.Font = Enum.Font.GothamBold
+MinusButton.Text = "-"
+MinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinusButton.TextSize = 20
+
+local MinusCorner = Instance.new("UICorner")
+MinusCorner.CornerRadius = UDim.new(0, 5)
+MinusCorner.Parent = MinusButton
+
+-- Plus Button
+PlusButton.Name = "PlusButton"
+PlusButton.Parent = ContentFrame
+PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+PlusButton.BorderSizePixel = 0
+PlusButton.Position = UDim2.new(0, 155, 0, 50)
+PlusButton.Size = UDim2.new(0, 35, 0, 30)
+PlusButton.Font = Enum.Font.GothamBold
+PlusButton.Text = "+"
+PlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlusButton.TextSize = 20
+
+local PlusCorner = Instance.new("UICorner")
+PlusCorner.CornerRadius = UDim.new(0, 5)
+PlusCorner.Parent = PlusButton
+
+-- Infinite Jump Label
+InfiniteJumpLabel.Name = "InfiniteJumpLabel"
+InfiniteJumpLabel.Parent = ContentFrame
+InfiniteJumpLabel.BackgroundTransparency = 1
+InfiniteJumpLabel.Position = UDim2.new(0, 20, 0, 100)
+InfiniteJumpLabel.Size = UDim2.new(0, 120, 0, 25)
+InfiniteJumpLabel.Font = Enum.Font.Gotham
+InfiniteJumpLabel.Text = "Infinite Jump:"
+InfiniteJumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfiniteJumpLabel.TextSize = 14
+InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Infinite Jump Button
+InfiniteJumpButton.Name = "InfiniteJumpButton"
+InfiniteJumpButton.Parent = ContentFrame
+InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+InfiniteJumpButton.BorderSizePixel = 0
+InfiniteJumpButton.Position = UDim2.new(0, 20, 0, 130)
+InfiniteJumpButton.Size = UDim2.new(0, 80, 0, 30)
+InfiniteJumpButton.Font = Enum.Font.GothamBold
+InfiniteJumpButton.Text = "OFF"
+InfiniteJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfiniteJumpButton.TextSize = 14
+
+local JumpCorner = Instance.new("UICorner")
+JumpCorner.CornerRadius = UDim.new(0, 5)
+JumpCorner.Parent = InfiniteJumpButton
+
+-- Warning Label
+WarningLabel.Name = "WarningLabel"
+WarningLabel.Parent = ContentFrame
+WarningLabel.BackgroundTransparency = 1
+WarningLabel.Position = UDim2.new(0, 20, 0, 175)
+WarningLabel.Size = UDim2.new(1, -40, 0, 20)
+WarningLabel.Font = Enum.Font.GothamBold
+WarningLabel.Text = ""
+WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+WarningLabel.TextSize = 12
+WarningLabel.Visible = false
+
+-- Minimized Button (RGB Border)
+MinimizedButton.Name = "MinimizedButton"
+MinimizedButton.Parent = ScreenGui
+MinimizedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+MinimizedButton.BorderSizePixel = 0
+MinimizedButton.Position = UDim2.new(0.5, -60, 0, 10)
+MinimizedButton.Size = UDim2.new(0, 120, 0, 40)
+MinimizedButton.Font = Enum.Font.GothamBold
+MinimizedButton.Text = "Ability"
+MinimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizedButton.TextSize = 16
+MinimizedButton.Visible = false
+MinimizedButton.Active = true
+MinimizedButton.Draggable = true
+
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MinimizedButton
+
+UIStroke.Thickness = 2
+UIStroke.Parent = MinimizedButton
+
+-- RGB Animation
+spawn(function()
+    while true do
+        for hue = 0, 1, 0.01 do
+            UIStroke.Color = Color3.fromHSV(hue, 1, 1)
+            wait(0.03)
+        end
+    end
+end)
+
+-- Functions
+local function updateSpeed()
+    SpeedDisplay.Text = tostring(currentSpeed)
+    humanoid.WalkSpeed = currentSpeed
+end
+
+local function showWarning(message)
+    WarningLabel.Text = message
+    WarningLabel.Visible = true
+    wait(2)
+    WarningLabel.Visible = false
+end
+
+-- Button Functions
+PlusButton.MouseButton1Click:Connect(function()
+    if currentSpeed < 50 then
+        currentSpeed = currentSpeed + 1
+        updateSpeed()
+    else
+        showWarning("Cannot be more than 50")
+    end
+end)
+
+MinusButton.MouseButton1Click:Connect(function()
+    if currentSpeed > 1 then
+        currentSpeed = currentSpeed - 1
+        updateSpeed()
+    end
+end)
+
+InfiniteJumpButton.MouseButton1Click:Connect(function()
+    infiniteJumpEnabled = not infiniteJumpEnabled
+    if infiniteJumpEnabled then
+        InfiniteJumpButton.Text = "ON"
+        InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+    else
+        InfiniteJumpButton.Text = "OFF"
+        InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+    end
+end)
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    MainFrame.Visible = not isMinimized
+    MinimizedButton.Visible = isMinimized
+end)
+
+MinimizedButton.MouseButton1Click:Connect(function()
+    isMinimized = false
+    MainFrame.Visible = true
+    MinimizedButton.Visible = false
+end)
+
+ExitButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Infinite Jump Logic
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJumpEnabled and humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- Character Reset Handler
+player.CharacterAdded:Connect(function(char)
+    character = char
+    humanoid = character:WaitForChild("Humanoid")
+    wait(0.1)
+    humanoid.WalkSpeed = currentSpeed
+end)
+
+-- Initial Setup
+updateSpeed()
+print("Ability GUI Loaded Successfully!")
