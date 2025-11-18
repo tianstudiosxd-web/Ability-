@@ -2,9 +2,8 @@
 -- Walkspeed & Infinite Jump GUI
 
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 -- Variables
 local currentSpeed = 16
@@ -66,7 +65,7 @@ TitleLabel.Parent = TopBar
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
-TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Font = Enum.Font.Gotham
 TitleLabel.Text = "Ability"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 15
@@ -79,7 +78,7 @@ MinimizeButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
 MinimizeButton.BorderSizePixel = 0
 MinimizeButton.Position = UDim2.new(1, -60, 0.5, -9)
 MinimizeButton.Size = UDim2.new(0, 23, 0, 18)
-MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Font = Enum.Font.Gotham
 MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeButton.TextSize = 16
@@ -95,7 +94,7 @@ ExitButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 ExitButton.BorderSizePixel = 0
 ExitButton.Position = UDim2.new(1, -32, 0.5, -9)
 ExitButton.Size = UDim2.new(0, 23, 0, 18)
-ExitButton.Font = Enum.Font.GothamBold
+ExitButton.Font = Enum.Font.Gotham
 ExitButton.Text = "X"
 ExitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ExitButton.TextSize = 13
@@ -130,7 +129,7 @@ SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SpeedDisplay.BorderSizePixel = 0
 SpeedDisplay.Position = UDim2.new(0, 15, 0, 32)
 SpeedDisplay.Size = UDim2.new(0, 70, 0, 28)
-SpeedDisplay.Font = Enum.Font.GothamBold
+SpeedDisplay.Font = Enum.Font.Gotham
 SpeedDisplay.Text = tostring(currentSpeed)
 SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedDisplay.TextSize = 15
@@ -146,7 +145,7 @@ MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 MinusButton.BorderSizePixel = 0
 MinusButton.Position = UDim2.new(0, 90, 0, 32)
 MinusButton.Size = UDim2.new(0, 32, 0, 28)
-MinusButton.Font = Enum.Font.GothamBold
+MinusButton.Font = Enum.Font.Gotham
 MinusButton.Text = "-"
 MinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinusButton.TextSize = 18
@@ -162,7 +161,7 @@ PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 PlusButton.BorderSizePixel = 0
 PlusButton.Position = UDim2.new(0, 127, 0, 32)
 PlusButton.Size = UDim2.new(0, 32, 0, 28)
-PlusButton.Font = Enum.Font.GothamBold
+PlusButton.Font = Enum.Font.Gotham
 PlusButton.Text = "+"
 PlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 PlusButton.TextSize = 18
@@ -190,7 +189,7 @@ InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
 InfiniteJumpButton.Position = UDim2.new(0, 15, 0, 90)
 InfiniteJumpButton.Size = UDim2.new(0, 70, 0, 28)
-InfiniteJumpButton.Font = Enum.Font.GothamBold
+InfiniteJumpButton.Font = Enum.Font.Gotham
 InfiniteJumpButton.Text = "OFF"
 InfiniteJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfiniteJumpButton.TextSize = 13
@@ -205,7 +204,7 @@ WarningLabel.Parent = ContentFrame
 WarningLabel.BackgroundTransparency = 1
 WarningLabel.Position = UDim2.new(0, 15, 0, 125)
 WarningLabel.Size = UDim2.new(1, -30, 0, 18)
-WarningLabel.Font = Enum.Font.GothamBold
+WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
 WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 WarningLabel.TextSize = 11
@@ -218,7 +217,7 @@ MinimizedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MinimizedButton.BorderSizePixel = 0
 MinimizedButton.Position = UDim2.new(0.5, -60, 0, 10)
 MinimizedButton.Size = UDim2.new(0, 120, 0, 40)
-MinimizedButton.Font = Enum.Font.GothamBold
+MinimizedButton.Font = Enum.Font.Gotham
 MinimizedButton.Text = "Ability"
 MinimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizedButton.TextSize = 16
@@ -245,7 +244,6 @@ end)
 -- Functions
 local function updateSpeed()
     SpeedDisplay.Text = tostring(currentSpeed)
-    humanoid.WalkSpeed = currentSpeed
 end
 
 local function showWarning(message)
@@ -254,6 +252,17 @@ local function showWarning(message)
     wait(2)
     WarningLabel.Visible = false
 end
+
+-- Auto Apply Walkspeed (Setiap Frame)
+RunService.Heartbeat:Connect(function()
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid and humanoid.WalkSpeed ~= currentSpeed then
+            humanoid.WalkSpeed = currentSpeed
+        end
+    end
+end)
 
 -- Button Functions
 PlusButton.MouseButton1Click:Connect(function()
@@ -301,15 +310,20 @@ end)
 
 -- Infinite Jump Logic
 UserInputService.JumpRequest:Connect(function()
-    if infiniteJumpEnabled and humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    if infiniteJumpEnabled then
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
     end
 end)
 
--- Character Reset Handler
-player.CharacterAdded:Connect(function(char)
-    character = char
-    humanoid = character:WaitForChild("Humanoid")
+-- Character Reset Handler (Tetap Apply Settings)
+player.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid")
     wait(0.1)
     humanoid.WalkSpeed = currentSpeed
 end)
