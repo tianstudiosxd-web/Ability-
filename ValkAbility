@@ -1,5 +1,5 @@
 -- Universal Roblox Ability Script
--- Walkspeed, Infinite Jump, Infinite Stamina, No-Clip, Anti-Knockback & More
+-- Walkspeed, Infinite Jump, Infinite Health, No-Clip, Anti-Knockback & Kill Players
 
 local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -13,6 +13,8 @@ local autoCollectEnabled = false
 local antiKnockbackEnabled = false
 local noClipEnabled = false
 local isMinimized = false
+local killMenuOpen = false
+local selectedPlayers = {}
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -36,10 +38,21 @@ local AntiKnockbackLabel = Instance.new("TextLabel")
 local AntiKnockbackButton = Instance.new("TextButton")
 local NoClipLabel = Instance.new("TextLabel")
 local NoClipButton = Instance.new("TextButton")
+local KillPlayersLabel = Instance.new("TextLabel")
+local KillPlayersButton = Instance.new("TextButton")
 local WarningLabel = Instance.new("TextLabel")
 local MinimizedButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 local UIStroke = Instance.new("UIStroke")
+
+-- Kill Menu GUI
+local KillMenuFrame = Instance.new("Frame")
+local KillMenuTopBar = Instance.new("Frame")
+local KillMenuTitle = Instance.new("TextLabel")
+local KillMenuClose = Instance.new("TextButton")
+local KillMenuScroll = Instance.new("ScrollingFrame")
+local KillAllButton = Instance.new("TextButton")
+local KillSelectedButton = Instance.new("TextButton")
 
 -- Properties
 ScreenGui.Name = "AbilityGUI"
@@ -121,7 +134,7 @@ ScrollFrame.Parent = MainFrame
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.Position = UDim2.new(0, 0, 0, 32)
 ScrollFrame.Size = UDim2.new(1, 0, 1, -32)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 460)
 ScrollFrame.ScrollBarThickness = 5
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
 ScrollFrame.BorderSizePixel = 0
@@ -321,11 +334,38 @@ local NoClipCorner = Instance.new("UICorner")
 NoClipCorner.CornerRadius = UDim.new(0, 5)
 NoClipCorner.Parent = NoClipButton
 
+-- Kill Players
+KillPlayersLabel.Name = "KillPlayersLabel"
+KillPlayersLabel.Parent = ScrollFrame
+KillPlayersLabel.BackgroundTransparency = 1
+KillPlayersLabel.Position = UDim2.new(0, 15, 0, 358)
+KillPlayersLabel.Size = UDim2.new(0, 100, 0, 20)
+KillPlayersLabel.Font = Enum.Font.Gotham
+KillPlayersLabel.Text = "Kill Players:"
+KillPlayersLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillPlayersLabel.TextSize = 13
+KillPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+KillPlayersButton.Name = "KillPlayersButton"
+KillPlayersButton.Parent = ScrollFrame
+KillPlayersButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+KillPlayersButton.BorderSizePixel = 0
+KillPlayersButton.Position = UDim2.new(0, 15, 0, 380)
+KillPlayersButton.Size = UDim2.new(0, 90, 0, 28)
+KillPlayersButton.Font = Enum.Font.Gotham
+KillPlayersButton.Text = "OPEN MENU"
+KillPlayersButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillPlayersButton.TextSize = 12
+
+local KillPlayersCorner = Instance.new("UICorner")
+KillPlayersCorner.CornerRadius = UDim.new(0, 5)
+KillPlayersCorner.Parent = KillPlayersButton
+
 -- Warning Label
 WarningLabel.Name = "WarningLabel"
 WarningLabel.Parent = ScrollFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 15, 0, 360)
+WarningLabel.Position = UDim2.new(0, 15, 0, 418)
 WarningLabel.Size = UDim2.new(1, -30, 0, 18)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
@@ -354,6 +394,103 @@ UICorner.Parent = MinimizedButton
 UIStroke.Thickness = 2
 UIStroke.Parent = MinimizedButton
 
+-- Kill Menu Frame
+KillMenuFrame.Name = "KillMenuFrame"
+KillMenuFrame.Parent = ScreenGui
+KillMenuFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+KillMenuFrame.BorderSizePixel = 0
+KillMenuFrame.Position = UDim2.new(0.5, -150, 0.5, -150)
+KillMenuFrame.Size = UDim2.new(0, 300, 0, 300)
+KillMenuFrame.Active = true
+KillMenuFrame.Draggable = true
+KillMenuFrame.Visible = false
+
+local KillMenuCorner = Instance.new("UICorner")
+KillMenuCorner.CornerRadius = UDim.new(0, 10)
+KillMenuCorner.Parent = KillMenuFrame
+
+-- Kill Menu Top Bar
+KillMenuTopBar.Name = "KillMenuTopBar"
+KillMenuTopBar.Parent = KillMenuFrame
+KillMenuTopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+KillMenuTopBar.BorderSizePixel = 0
+KillMenuTopBar.Size = UDim2.new(1, 0, 0, 32)
+
+local KillMenuTopCorner = Instance.new("UICorner")
+KillMenuTopCorner.CornerRadius = UDim.new(0, 10)
+KillMenuTopCorner.Parent = KillMenuTopBar
+
+-- Kill Menu Title
+KillMenuTitle.Name = "KillMenuTitle"
+KillMenuTitle.Parent = KillMenuTopBar
+KillMenuTitle.BackgroundTransparency = 1
+KillMenuTitle.Position = UDim2.new(0, 10, 0, 0)
+KillMenuTitle.Size = UDim2.new(0.8, 0, 1, 0)
+KillMenuTitle.Font = Enum.Font.Gotham
+KillMenuTitle.Text = "Kill Players Menu"
+KillMenuTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillMenuTitle.TextSize = 15
+KillMenuTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Kill Menu Close
+KillMenuClose.Name = "KillMenuClose"
+KillMenuClose.Parent = KillMenuTopBar
+KillMenuClose.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+KillMenuClose.BorderSizePixel = 0
+KillMenuClose.Position = UDim2.new(1, -32, 0.5, -9)
+KillMenuClose.Size = UDim2.new(0, 23, 0, 18)
+KillMenuClose.Font = Enum.Font.Gotham
+KillMenuClose.Text = "X"
+KillMenuClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillMenuClose.TextSize = 13
+
+local KillMenuCloseCorner = Instance.new("UICorner")
+KillMenuCloseCorner.CornerRadius = UDim.new(0, 4)
+KillMenuCloseCorner.Parent = KillMenuClose
+
+-- Kill Menu Scroll
+KillMenuScroll.Name = "KillMenuScroll"
+KillMenuScroll.Parent = KillMenuFrame
+KillMenuScroll.BackgroundTransparency = 1
+KillMenuScroll.Position = UDim2.new(0, 10, 0, 42)
+KillMenuScroll.Size = UDim2.new(1, -20, 1, -92)
+KillMenuScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+KillMenuScroll.ScrollBarThickness = 5
+KillMenuScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+KillMenuScroll.BorderSizePixel = 0
+
+-- Kill All Button
+KillAllButton.Name = "KillAllButton"
+KillAllButton.Parent = KillMenuFrame
+KillAllButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+KillAllButton.BorderSizePixel = 0
+KillAllButton.Position = UDim2.new(0, 10, 1, -40)
+KillAllButton.Size = UDim2.new(0.48, -5, 0, 30)
+KillAllButton.Font = Enum.Font.Gotham
+KillAllButton.Text = "KILL ALL"
+KillAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillAllButton.TextSize = 13
+
+local KillAllCorner = Instance.new("UICorner")
+KillAllCorner.CornerRadius = UDim.new(0, 5)
+KillAllCorner.Parent = KillAllButton
+
+-- Kill Selected Button
+KillSelectedButton.Name = "KillSelectedButton"
+KillSelectedButton.Parent = KillMenuFrame
+KillSelectedButton.BackgroundColor3 = Color3.fromRGB(255, 100, 50)
+KillSelectedButton.BorderSizePixel = 0
+KillSelectedButton.Position = UDim2.new(0.52, 0, 1, -40)
+KillSelectedButton.Size = UDim2.new(0.48, -10, 0, 30)
+KillSelectedButton.Font = Enum.Font.Gotham
+KillSelectedButton.Text = "KILL SELECTED"
+KillSelectedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillSelectedButton.TextSize = 12
+
+local KillSelectedCorner = Instance.new("UICorner")
+KillSelectedCorner.CornerRadius = UDim.new(0, 5)
+KillSelectedCorner.Parent = KillSelectedButton
+
 -- RGB Animation
 spawn(function()
     while true do
@@ -374,6 +511,71 @@ local function showWarning(message)
     WarningLabel.Visible = true
     wait(2)
     WarningLabel.Visible = false
+end
+
+local function refreshPlayerList()
+    -- Clear existing buttons
+    for _, child in pairs(KillMenuScroll:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    selectedPlayers = {}
+    local yPos = 0
+    
+    -- Add player buttons
+    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            local playerButton = Instance.new("TextButton")
+            playerButton.Name = targetPlayer.Name
+            playerButton.Parent = KillMenuScroll
+            playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+            playerButton.BorderSizePixel = 0
+            playerButton.Position = UDim2.new(0, 0, 0, yPos)
+            playerButton.Size = UDim2.new(1, -5, 0, 32)
+            playerButton.Font = Enum.Font.Gotham
+            playerButton.Text = targetPlayer.Name
+            playerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            playerButton.TextSize = 13
+            playerButton.TextXAlignment = Enum.TextXAlignment.Left
+            playerButton.TextTruncate = Enum.TextTruncate.AtEnd
+            
+            local buttonCorner = Instance.new("UICorner")
+            buttonCorner.CornerRadius = UDim.new(0, 5)
+            buttonCorner.Parent = playerButton
+            
+            local padding = Instance.new("UIPadding")
+            padding.PaddingLeft = UDim.new(0, 10)
+            padding.Parent = playerButton
+            
+            playerButton.MouseButton1Click:Connect(function()
+                if selectedPlayers[targetPlayer.Name] then
+                    selectedPlayers[targetPlayer.Name] = nil
+                    playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+                else
+                    selectedPlayers[targetPlayer.Name] = true
+                    playerButton.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
+                end
+            end)
+            
+            yPos = yPos + 37
+        end
+    end
+    
+    KillMenuScroll.CanvasSize = UDim2.new(0, 0, 0, yPos)
+end
+
+local function killPlayer(targetPlayer)
+    local targetChar = targetPlayer.Character
+    if targetChar then
+        local targetHumanoid = targetChar:FindFirstChild("Humanoid")
+        if targetHumanoid then
+            pcall(function()
+                targetHumanoid.Health = 0
+            end)
+        end
+    end
 end
 
 -- Auto Apply Walkspeed
@@ -522,6 +724,47 @@ NoClipButton.MouseButton1Click:Connect(function()
     end
 end)
 
+KillPlayersButton.MouseButton1Click:Connect(function()
+    killMenuOpen = not killMenuOpen
+    KillMenuFrame.Visible = killMenuOpen
+    if killMenuOpen then
+        refreshPlayerList()
+    end
+end)
+
+KillMenuClose.MouseButton1Click:Connect(function()
+    killMenuOpen = false
+    KillMenuFrame.Visible = false
+end)
+
+KillAllButton.MouseButton1Click:Connect(function()
+    local killed = 0
+    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            killPlayer(targetPlayer)
+            killed = killed + 1
+        end
+    end
+    showWarning("Killed " .. killed .. " players!")
+end)
+
+KillSelectedButton.MouseButton1Click:Connect(function()
+    local killed = 0
+    for playerName, _ in pairs(selectedPlayers) do
+        local targetPlayer = game.Players:FindFirstChild(playerName)
+        if targetPlayer then
+            killPlayer(targetPlayer)
+            killed = killed + 1
+        end
+    end
+    if killed > 0 then
+        showWarning("Killed " .. killed .. " selected player(s)!")
+    else
+        showWarning("No players selected!")
+    end
+    refreshPlayerList()
+end)
+
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     MainFrame.Visible = not isMinimized
@@ -560,4 +803,4 @@ end)
 
 -- Initial Setup
 updateSpeed()
-print("Ability GUI Loaded Successfully with All Features!")
+print("Ability GUI Loaded Successfully with Kill Players Menu!")
