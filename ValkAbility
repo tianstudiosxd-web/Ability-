@@ -1,5 +1,5 @@
 -- Universal Roblox Ability Script
--- Walkspeed, Infinite Jump, Infinite Health, No-Clip, Anti-Knockback & Kill Players
+-- Walkspeed, Infinite Jump, Anti Hit & One Hit GUI
 
 local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -8,13 +8,13 @@ local RunService = game:GetService("RunService")
 -- Variables
 local currentSpeed = 16
 local infiniteJumpEnabled = false
-local infiniteHealthEnabled = false
-local autoCollectEnabled = false
-local antiKnockbackEnabled = false
-local noClipEnabled = false
+local antiHitEnabled = false
+local oneHitEnabled = false
 local isMinimized = false
-local killMenuOpen = false
-local selectedPlayers = {}
+
+-- Store original health values
+local originalHealth = 100
+local originalMaxHealth = 100
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -23,49 +23,34 @@ local TopBar = Instance.new("Frame")
 local TitleLabel = Instance.new("TextLabel")
 local MinimizeButton = Instance.new("TextButton")
 local ExitButton = Instance.new("TextButton")
-local ScrollFrame = Instance.new("ScrollingFrame")
+local ContentFrame = Instance.new("ScrollingFrame")
 local WalkspeedLabel = Instance.new("TextLabel")
 local SpeedDisplay = Instance.new("TextLabel")
 local MinusButton = Instance.new("TextButton")
 local PlusButton = Instance.new("TextButton")
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
-local InfiniteHealthLabel = Instance.new("TextLabel")
-local InfiniteHealthButton = Instance.new("TextButton")
-local AutoCollectLabel = Instance.new("TextLabel")
-local AutoCollectButton = Instance.new("TextButton")
-local AntiKnockbackLabel = Instance.new("TextLabel")
-local AntiKnockbackButton = Instance.new("TextButton")
-local NoClipLabel = Instance.new("TextLabel")
-local NoClipButton = Instance.new("TextButton")
-local KillPlayersLabel = Instance.new("TextLabel")
-local KillPlayersButton = Instance.new("TextButton")
+local AntiHitLabel = Instance.new("TextLabel")
+local AntiHitButton = Instance.new("TextButton")
+local OneHitLabel = Instance.new("TextLabel")
+local OneHitButton = Instance.new("TextButton")
 local WarningLabel = Instance.new("TextLabel")
 local MinimizedButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 local UIStroke = Instance.new("UIStroke")
-
--- Kill Menu GUI
-local KillMenuFrame = Instance.new("Frame")
-local KillMenuTopBar = Instance.new("Frame")
-local KillMenuTitle = Instance.new("TextLabel")
-local KillMenuClose = Instance.new("TextButton")
-local KillMenuScroll = Instance.new("ScrollingFrame")
-local KillAllButton = Instance.new("TextButton")
-local KillSelectedButton = Instance.new("TextButton")
 
 -- Properties
 ScreenGui.Name = "AbilityGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Main Frame (Lebih kecil dengan scroll)
+-- Main Frame (Diperbesar untuk fitur tambahan)
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -120)
-MainFrame.Size = UDim2.new(0, 280, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -130)
+MainFrame.Size = UDim2.new(0, 280, 0, 260)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -91,7 +76,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
 TitleLabel.Font = Enum.Font.Gotham
-TitleLabel.Text = "Ability"
+TitleLabel.Text = "Ability Hub"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -128,20 +113,19 @@ local ExitCorner = Instance.new("UICorner")
 ExitCorner.CornerRadius = UDim.new(0, 4)
 ExitCorner.Parent = ExitButton
 
--- Scroll Frame (Canvas size lebih besar untuk scroll)
-ScrollFrame.Name = "ScrollFrame"
-ScrollFrame.Parent = MainFrame
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.Position = UDim2.new(0, 0, 0, 32)
-ScrollFrame.Size = UDim2.new(1, 0, 1, -32)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 460)
-ScrollFrame.ScrollBarThickness = 5
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
-ScrollFrame.BorderSizePixel = 0
+-- Content Frame (ScrollingFrame untuk fitur lebih banyak)
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 0, 0, 32)
+ContentFrame.Size = UDim2.new(1, 0, 1, -32)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 250)
+ContentFrame.ScrollBarThickness = 4
+ContentFrame.BorderSizePixel = 0
 
 -- Walkspeed Label
 WalkspeedLabel.Name = "WalkspeedLabel"
-WalkspeedLabel.Parent = ScrollFrame
+WalkspeedLabel.Parent = ContentFrame
 WalkspeedLabel.BackgroundTransparency = 1
 WalkspeedLabel.Position = UDim2.new(0, 15, 0, 10)
 WalkspeedLabel.Size = UDim2.new(0, 100, 0, 20)
@@ -153,7 +137,7 @@ WalkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Speed Display
 SpeedDisplay.Name = "SpeedDisplay"
-SpeedDisplay.Parent = ScrollFrame
+SpeedDisplay.Parent = ContentFrame
 SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SpeedDisplay.BorderSizePixel = 0
 SpeedDisplay.Position = UDim2.new(0, 15, 0, 32)
@@ -169,7 +153,7 @@ SpeedCorner.Parent = SpeedDisplay
 
 -- Minus Button
 MinusButton.Name = "MinusButton"
-MinusButton.Parent = ScrollFrame
+MinusButton.Parent = ContentFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 MinusButton.BorderSizePixel = 0
 MinusButton.Position = UDim2.new(0, 90, 0, 32)
@@ -185,7 +169,7 @@ MinusCorner.Parent = MinusButton
 
 -- Plus Button
 PlusButton.Name = "PlusButton"
-PlusButton.Parent = ScrollFrame
+PlusButton.Parent = ContentFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 PlusButton.BorderSizePixel = 0
 PlusButton.Position = UDim2.new(0, 127, 0, 32)
@@ -199,9 +183,9 @@ local PlusCorner = Instance.new("UICorner")
 PlusCorner.CornerRadius = UDim.new(0, 5)
 PlusCorner.Parent = PlusButton
 
--- Infinite Jump
+-- Infinite Jump Label
 InfiniteJumpLabel.Name = "InfiniteJumpLabel"
-InfiniteJumpLabel.Parent = ScrollFrame
+InfiniteJumpLabel.Parent = ContentFrame
 InfiniteJumpLabel.BackgroundTransparency = 1
 InfiniteJumpLabel.Position = UDim2.new(0, 15, 0, 68)
 InfiniteJumpLabel.Size = UDim2.new(0, 100, 0, 20)
@@ -211,8 +195,9 @@ InfiniteJumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfiniteJumpLabel.TextSize = 13
 InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Infinite Jump Button
 InfiniteJumpButton.Name = "InfiniteJumpButton"
-InfiniteJumpButton.Parent = ScrollFrame
+InfiniteJumpButton.Parent = ContentFrame
 InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
 InfiniteJumpButton.Position = UDim2.new(0, 15, 0, 90)
@@ -226,146 +211,67 @@ local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
 JumpCorner.Parent = InfiniteJumpButton
 
--- Infinite Health
-InfiniteHealthLabel.Name = "InfiniteHealthLabel"
-InfiniteHealthLabel.Parent = ScrollFrame
-InfiniteHealthLabel.BackgroundTransparency = 1
-InfiniteHealthLabel.Position = UDim2.new(0, 15, 0, 126)
-InfiniteHealthLabel.Size = UDim2.new(0, 120, 0, 20)
-InfiniteHealthLabel.Font = Enum.Font.Gotham
-InfiniteHealthLabel.Text = "Infinite Health:"
-InfiniteHealthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfiniteHealthLabel.TextSize = 13
-InfiniteHealthLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- Anti Hit Label
+AntiHitLabel.Name = "AntiHitLabel"
+AntiHitLabel.Parent = ContentFrame
+AntiHitLabel.BackgroundTransparency = 1
+AntiHitLabel.Position = UDim2.new(0, 15, 0, 126)
+AntiHitLabel.Size = UDim2.new(0, 100, 0, 20)
+AntiHitLabel.Font = Enum.Font.Gotham
+AntiHitLabel.Text = "Anti Hit:"
+AntiHitLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiHitLabel.TextSize = 13
+AntiHitLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-InfiniteHealthButton.Name = "InfiniteHealthButton"
-InfiniteHealthButton.Parent = ScrollFrame
-InfiniteHealthButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-InfiniteHealthButton.BorderSizePixel = 0
-InfiniteHealthButton.Position = UDim2.new(0, 15, 0, 148)
-InfiniteHealthButton.Size = UDim2.new(0, 70, 0, 28)
-InfiniteHealthButton.Font = Enum.Font.Gotham
-InfiniteHealthButton.Text = "OFF"
-InfiniteHealthButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfiniteHealthButton.TextSize = 13
+-- Anti Hit Button
+AntiHitButton.Name = "AntiHitButton"
+AntiHitButton.Parent = ContentFrame
+AntiHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+AntiHitButton.BorderSizePixel = 0
+AntiHitButton.Position = UDim2.new(0, 15, 0, 148)
+AntiHitButton.Size = UDim2.new(0, 70, 0, 28)
+AntiHitButton.Font = Enum.Font.Gotham
+AntiHitButton.Text = "OFF"
+AntiHitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiHitButton.TextSize = 13
 
-local HealthCorner = Instance.new("UICorner")
-HealthCorner.CornerRadius = UDim.new(0, 5)
-HealthCorner.Parent = InfiniteHealthButton
+local AntiHitCorner = Instance.new("UICorner")
+AntiHitCorner.CornerRadius = UDim.new(0, 5)
+AntiHitCorner.Parent = AntiHitButton
 
--- Auto Collect
-AutoCollectLabel.Name = "AutoCollectLabel"
-AutoCollectLabel.Parent = ScrollFrame
-AutoCollectLabel.BackgroundTransparency = 1
-AutoCollectLabel.Position = UDim2.new(0, 15, 0, 184)
-AutoCollectLabel.Size = UDim2.new(0, 100, 0, 20)
-AutoCollectLabel.Font = Enum.Font.Gotham
-AutoCollectLabel.Text = "Auto Collect:"
-AutoCollectLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoCollectLabel.TextSize = 13
-AutoCollectLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- One Hit Label
+OneHitLabel.Name = "OneHitLabel"
+OneHitLabel.Parent = ContentFrame
+OneHitLabel.BackgroundTransparency = 1
+OneHitLabel.Position = UDim2.new(0, 15, 0, 184)
+OneHitLabel.Size = UDim2.new(0, 100, 0, 20)
+OneHitLabel.Font = Enum.Font.Gotham
+OneHitLabel.Text = "One Hit Kill:"
+OneHitLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+OneHitLabel.TextSize = 13
+OneHitLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-AutoCollectButton.Name = "AutoCollectButton"
-AutoCollectButton.Parent = ScrollFrame
-AutoCollectButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-AutoCollectButton.BorderSizePixel = 0
-AutoCollectButton.Position = UDim2.new(0, 15, 0, 206)
-AutoCollectButton.Size = UDim2.new(0, 70, 0, 28)
-AutoCollectButton.Font = Enum.Font.Gotham
-AutoCollectButton.Text = "OFF"
-AutoCollectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoCollectButton.TextSize = 13
+-- One Hit Button
+OneHitButton.Name = "OneHitButton"
+OneHitButton.Parent = ContentFrame
+OneHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+OneHitButton.BorderSizePixel = 0
+OneHitButton.Position = UDim2.new(0, 15, 0, 206)
+OneHitButton.Size = UDim2.new(0, 70, 0, 28)
+OneHitButton.Font = Enum.Font.Gotham
+OneHitButton.Text = "OFF"
+OneHitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OneHitButton.TextSize = 13
 
-local CollectCorner = Instance.new("UICorner")
-CollectCorner.CornerRadius = UDim.new(0, 5)
-CollectCorner.Parent = AutoCollectButton
-
--- Anti-Knockback
-AntiKnockbackLabel.Name = "AntiKnockbackLabel"
-AntiKnockbackLabel.Parent = ScrollFrame
-AntiKnockbackLabel.BackgroundTransparency = 1
-AntiKnockbackLabel.Position = UDim2.new(0, 15, 0, 242)
-AntiKnockbackLabel.Size = UDim2.new(0, 120, 0, 20)
-AntiKnockbackLabel.Font = Enum.Font.Gotham
-AntiKnockbackLabel.Text = "Anti-Knockback:"
-AntiKnockbackLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-AntiKnockbackLabel.TextSize = 13
-AntiKnockbackLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-AntiKnockbackButton.Name = "AntiKnockbackButton"
-AntiKnockbackButton.Parent = ScrollFrame
-AntiKnockbackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-AntiKnockbackButton.BorderSizePixel = 0
-AntiKnockbackButton.Position = UDim2.new(0, 15, 0, 264)
-AntiKnockbackButton.Size = UDim2.new(0, 70, 0, 28)
-AntiKnockbackButton.Font = Enum.Font.Gotham
-AntiKnockbackButton.Text = "OFF"
-AntiKnockbackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AntiKnockbackButton.TextSize = 13
-
-local KnockbackCorner = Instance.new("UICorner")
-KnockbackCorner.CornerRadius = UDim.new(0, 5)
-KnockbackCorner.Parent = AntiKnockbackButton
-
--- No-Clip
-NoClipLabel.Name = "NoClipLabel"
-NoClipLabel.Parent = ScrollFrame
-NoClipLabel.BackgroundTransparency = 1
-NoClipLabel.Position = UDim2.new(0, 15, 0, 300)
-NoClipLabel.Size = UDim2.new(0, 100, 0, 20)
-NoClipLabel.Font = Enum.Font.Gotham
-NoClipLabel.Text = "No-Clip:"
-NoClipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoClipLabel.TextSize = 13
-NoClipLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-NoClipButton.Name = "NoClipButton"
-NoClipButton.Parent = ScrollFrame
-NoClipButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-NoClipButton.BorderSizePixel = 0
-NoClipButton.Position = UDim2.new(0, 15, 0, 322)
-NoClipButton.Size = UDim2.new(0, 70, 0, 28)
-NoClipButton.Font = Enum.Font.Gotham
-NoClipButton.Text = "OFF"
-NoClipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoClipButton.TextSize = 13
-
-local NoClipCorner = Instance.new("UICorner")
-NoClipCorner.CornerRadius = UDim.new(0, 5)
-NoClipCorner.Parent = NoClipButton
-
--- Kill Players
-KillPlayersLabel.Name = "KillPlayersLabel"
-KillPlayersLabel.Parent = ScrollFrame
-KillPlayersLabel.BackgroundTransparency = 1
-KillPlayersLabel.Position = UDim2.new(0, 15, 0, 358)
-KillPlayersLabel.Size = UDim2.new(0, 100, 0, 20)
-KillPlayersLabel.Font = Enum.Font.Gotham
-KillPlayersLabel.Text = "Kill Players:"
-KillPlayersLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillPlayersLabel.TextSize = 13
-KillPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-KillPlayersButton.Name = "KillPlayersButton"
-KillPlayersButton.Parent = ScrollFrame
-KillPlayersButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-KillPlayersButton.BorderSizePixel = 0
-KillPlayersButton.Position = UDim2.new(0, 15, 0, 380)
-KillPlayersButton.Size = UDim2.new(0, 90, 0, 28)
-KillPlayersButton.Font = Enum.Font.Gotham
-KillPlayersButton.Text = "OPEN MENU"
-KillPlayersButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillPlayersButton.TextSize = 12
-
-local KillPlayersCorner = Instance.new("UICorner")
-KillPlayersCorner.CornerRadius = UDim.new(0, 5)
-KillPlayersCorner.Parent = KillPlayersButton
+local OneHitCorner = Instance.new("UICorner")
+OneHitCorner.CornerRadius = UDim.new(0, 5)
+OneHitCorner.Parent = OneHitButton
 
 -- Warning Label
 WarningLabel.Name = "WarningLabel"
-WarningLabel.Parent = ScrollFrame
+WarningLabel.Parent = MainFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 15, 0, 418)
+WarningLabel.Position = UDim2.new(0, 15, 1, -25)
 WarningLabel.Size = UDim2.new(1, -30, 0, 18)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
@@ -373,7 +279,7 @@ WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 WarningLabel.TextSize = 11
 WarningLabel.Visible = false
 
--- Minimized Button
+-- Minimized Button (RGB Border)
 MinimizedButton.Name = "MinimizedButton"
 MinimizedButton.Parent = ScreenGui
 MinimizedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -381,9 +287,9 @@ MinimizedButton.BorderSizePixel = 0
 MinimizedButton.Position = UDim2.new(0.5, -60, 0, 10)
 MinimizedButton.Size = UDim2.new(0, 120, 0, 40)
 MinimizedButton.Font = Enum.Font.Gotham
-MinimizedButton.Text = "Ability"
+MinimizedButton.Text = "Ability Hub"
 MinimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizedButton.TextSize = 16
+MinimizedButton.TextSize = 14
 MinimizedButton.Visible = false
 MinimizedButton.Active = true
 MinimizedButton.Draggable = true
@@ -393,103 +299,6 @@ UICorner.Parent = MinimizedButton
 
 UIStroke.Thickness = 2
 UIStroke.Parent = MinimizedButton
-
--- Kill Menu Frame
-KillMenuFrame.Name = "KillMenuFrame"
-KillMenuFrame.Parent = ScreenGui
-KillMenuFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-KillMenuFrame.BorderSizePixel = 0
-KillMenuFrame.Position = UDim2.new(0.5, -150, 0.5, -150)
-KillMenuFrame.Size = UDim2.new(0, 300, 0, 300)
-KillMenuFrame.Active = true
-KillMenuFrame.Draggable = true
-KillMenuFrame.Visible = false
-
-local KillMenuCorner = Instance.new("UICorner")
-KillMenuCorner.CornerRadius = UDim.new(0, 10)
-KillMenuCorner.Parent = KillMenuFrame
-
--- Kill Menu Top Bar
-KillMenuTopBar.Name = "KillMenuTopBar"
-KillMenuTopBar.Parent = KillMenuFrame
-KillMenuTopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-KillMenuTopBar.BorderSizePixel = 0
-KillMenuTopBar.Size = UDim2.new(1, 0, 0, 32)
-
-local KillMenuTopCorner = Instance.new("UICorner")
-KillMenuTopCorner.CornerRadius = UDim.new(0, 10)
-KillMenuTopCorner.Parent = KillMenuTopBar
-
--- Kill Menu Title
-KillMenuTitle.Name = "KillMenuTitle"
-KillMenuTitle.Parent = KillMenuTopBar
-KillMenuTitle.BackgroundTransparency = 1
-KillMenuTitle.Position = UDim2.new(0, 10, 0, 0)
-KillMenuTitle.Size = UDim2.new(0.8, 0, 1, 0)
-KillMenuTitle.Font = Enum.Font.Gotham
-KillMenuTitle.Text = "Kill Players Menu"
-KillMenuTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillMenuTitle.TextSize = 15
-KillMenuTitle.TextXAlignment = Enum.TextXAlignment.Left
-
--- Kill Menu Close
-KillMenuClose.Name = "KillMenuClose"
-KillMenuClose.Parent = KillMenuTopBar
-KillMenuClose.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-KillMenuClose.BorderSizePixel = 0
-KillMenuClose.Position = UDim2.new(1, -32, 0.5, -9)
-KillMenuClose.Size = UDim2.new(0, 23, 0, 18)
-KillMenuClose.Font = Enum.Font.Gotham
-KillMenuClose.Text = "X"
-KillMenuClose.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillMenuClose.TextSize = 13
-
-local KillMenuCloseCorner = Instance.new("UICorner")
-KillMenuCloseCorner.CornerRadius = UDim.new(0, 4)
-KillMenuCloseCorner.Parent = KillMenuClose
-
--- Kill Menu Scroll
-KillMenuScroll.Name = "KillMenuScroll"
-KillMenuScroll.Parent = KillMenuFrame
-KillMenuScroll.BackgroundTransparency = 1
-KillMenuScroll.Position = UDim2.new(0, 10, 0, 42)
-KillMenuScroll.Size = UDim2.new(1, -20, 1, -92)
-KillMenuScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-KillMenuScroll.ScrollBarThickness = 5
-KillMenuScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
-KillMenuScroll.BorderSizePixel = 0
-
--- Kill All Button
-KillAllButton.Name = "KillAllButton"
-KillAllButton.Parent = KillMenuFrame
-KillAllButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-KillAllButton.BorderSizePixel = 0
-KillAllButton.Position = UDim2.new(0, 10, 1, -40)
-KillAllButton.Size = UDim2.new(0.48, -5, 0, 30)
-KillAllButton.Font = Enum.Font.Gotham
-KillAllButton.Text = "KILL ALL"
-KillAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillAllButton.TextSize = 13
-
-local KillAllCorner = Instance.new("UICorner")
-KillAllCorner.CornerRadius = UDim.new(0, 5)
-KillAllCorner.Parent = KillAllButton
-
--- Kill Selected Button
-KillSelectedButton.Name = "KillSelectedButton"
-KillSelectedButton.Parent = KillMenuFrame
-KillSelectedButton.BackgroundColor3 = Color3.fromRGB(255, 100, 50)
-KillSelectedButton.BorderSizePixel = 0
-KillSelectedButton.Position = UDim2.new(0.52, 0, 1, -40)
-KillSelectedButton.Size = UDim2.new(0.48, -10, 0, 30)
-KillSelectedButton.Font = Enum.Font.Gotham
-KillSelectedButton.Text = "KILL SELECTED"
-KillSelectedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillSelectedButton.TextSize = 12
-
-local KillSelectedCorner = Instance.new("UICorner")
-KillSelectedCorner.CornerRadius = UDim.new(0, 5)
-KillSelectedCorner.Parent = KillSelectedButton
 
 -- RGB Animation
 spawn(function()
@@ -513,72 +322,7 @@ local function showWarning(message)
     WarningLabel.Visible = false
 end
 
-local function refreshPlayerList()
-    -- Clear existing buttons
-    for _, child in pairs(KillMenuScroll:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-    
-    selectedPlayers = {}
-    local yPos = 0
-    
-    -- Add player buttons
-    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
-        if targetPlayer ~= player then
-            local playerButton = Instance.new("TextButton")
-            playerButton.Name = targetPlayer.Name
-            playerButton.Parent = KillMenuScroll
-            playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-            playerButton.BorderSizePixel = 0
-            playerButton.Position = UDim2.new(0, 0, 0, yPos)
-            playerButton.Size = UDim2.new(1, -5, 0, 32)
-            playerButton.Font = Enum.Font.Gotham
-            playerButton.Text = targetPlayer.Name
-            playerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            playerButton.TextSize = 13
-            playerButton.TextXAlignment = Enum.TextXAlignment.Left
-            playerButton.TextTruncate = Enum.TextTruncate.AtEnd
-            
-            local buttonCorner = Instance.new("UICorner")
-            buttonCorner.CornerRadius = UDim.new(0, 5)
-            buttonCorner.Parent = playerButton
-            
-            local padding = Instance.new("UIPadding")
-            padding.PaddingLeft = UDim.new(0, 10)
-            padding.Parent = playerButton
-            
-            playerButton.MouseButton1Click:Connect(function()
-                if selectedPlayers[targetPlayer.Name] then
-                    selectedPlayers[targetPlayer.Name] = nil
-                    playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-                else
-                    selectedPlayers[targetPlayer.Name] = true
-                    playerButton.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
-                end
-            end)
-            
-            yPos = yPos + 37
-        end
-    end
-    
-    KillMenuScroll.CanvasSize = UDim2.new(0, 0, 0, yPos)
-end
-
-local function killPlayer(targetPlayer)
-    local targetChar = targetPlayer.Character
-    if targetChar then
-        local targetHumanoid = targetChar:FindFirstChild("Humanoid")
-        if targetHumanoid then
-            pcall(function()
-                targetHumanoid.Health = 0
-            end)
-        end
-    end
-end
-
--- Auto Apply Walkspeed
+-- Auto Apply Walkspeed (Setiap Frame)
 RunService.Heartbeat:Connect(function()
     local character = player.Character
     if character then
@@ -586,63 +330,101 @@ RunService.Heartbeat:Connect(function()
         if humanoid and humanoid.WalkSpeed ~= currentSpeed then
             humanoid.WalkSpeed = currentSpeed
         end
-        
-        -- Infinite Health (Only Health, no stamina)
-        if infiniteHealthEnabled and humanoid then
-            humanoid.Health = humanoid.MaxHealth
+    end
+end)
+
+-- Anti Hit System (Mencegah damage dan knockback)
+local function setupAntiHit(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    
+    -- Simpan health asli
+    originalHealth = humanoid.Health
+    originalMaxHealth = humanoid.MaxHealth
+    
+    -- Monitor health changes
+    humanoid.HealthChanged:Connect(function(health)
+        if antiHitEnabled and health < originalHealth then
+            humanoid.Health = originalMaxHealth
         end
-        
-        -- Anti-Knockback
-        if antiKnockbackEnabled then
-            local hrp = character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                hrp.Anchored = false
-                local bodyVelocity = hrp:FindFirstChild("BodyVelocity") or hrp:FindFirstChild("BodyPosition")
-                if bodyVelocity then
-                    bodyVelocity:Destroy()
+        originalHealth = humanoid.Health
+    end)
+    
+    -- Prevent knockback dengan anchoring sementara
+    RunService.Heartbeat:Connect(function()
+        if antiHitEnabled then
+            humanoid.Health = originalMaxHealth
+            
+            -- Disable knockback dengan mencegah velocity changes
+            if rootPart and rootPart:IsA("BasePart") then
+                local currentVelocity = rootPart.AssemblyLinearVelocity
+                -- Hanya reset velocity Y jika terlalu besar (knockback detection)
+                if math.abs(currentVelocity.Y) > 50 or currentVelocity.Magnitude > 100 then
+                    rootPart.AssemblyLinearVelocity = Vector3.new(currentVelocity.X * 0.5, 0, currentVelocity.Z * 0.5)
+                end
+            end
+        end
+    end)
+    
+    -- Hapus semua damage scripts yang ada
+    for _, descendant in pairs(character:GetDescendants()) do
+        if descendant:IsA("Script") or descendant:IsA("LocalScript") then
+            if descendant.Name:lower():find("damage") or descendant.Name:lower():find("hurt") then
+                if antiHitEnabled then
+                    descendant.Disabled = true
                 end
             end
         end
     end
-end)
-
--- No-Clip System
-RunService.Stepped:Connect(function()
-    if noClipEnabled then
-        local character = player.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
-        end
-    end
-end)
-
--- Auto Collect System
-spawn(function()
-    while wait(0.1) do
-        if autoCollectEnabled then
-            local character = player.Character
-            if character then
-                local hrp = character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    for _, obj in pairs(workspace:GetDescendants()) do
-                        if obj:IsA("TouchTransmitter") or (obj:IsA("Part") and obj.Name:lower():find("coin")) or (obj:IsA("Part") and obj.Name:lower():find("collect")) then
-                            pcall(function()
-                                if obj.Parent then
-                                    firetouchinterest(hrp, obj, 0)
-                                    firetouchinterest(hrp, obj, 1)
-                                end
-                            end)
+end
+-- One Hit Kill System (Benar-benar membunuh musuh)
+local function setupOneHit(character)
+    local function onHit(hit)
+        if not oneHitEnabled then return end
+        
+        local enemyCharacter = hit.Parent
+        if enemyCharacter and enemyCharacter ~= character then
+            local enemyHumanoid = enemyCharacter:FindFirstChild("Humanoid")
+            local enemyPlayer = game.Players:GetPlayerFromCharacter(enemyCharacter)
+            
+            -- Pastikan ini adalah musuh (player lain atau NPC)
+            if enemyHumanoid and enemyHumanoid.Health > 0 then
+                -- Kill secara langsung
+                enemyHumanoid.Health = 0
+                enemyHumanoid:TakeDamage(enemyHumanoid.MaxHealth)
+                
+                -- Fallback: break joints jika masih hidup
+                spawn(function()
+                    wait(0.1)
+                    if enemyHumanoid.Health > 0 then
+                        enemyHumanoid:ChangeState(Enum.HumanoidStateType.Dead)
+                        if enemyCharacter:FindFirstChild("Head") then
+                            enemyCharacter.Head:Destroy()
                         end
                     end
-                end
+                end)
             end
         end
     end
-end)
+    
+    -- Monitor semua part di character untuk collision
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.Touched:Connect(onHit)
+        end
+    end
+    
+    -- Monitor tools
+    character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            for _, part in pairs(child:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Touched:Connect(onHit)
+                end
+            end
+        end
+    end)
+end
 
 -- Button Functions
 PlusButton.MouseButton1Click:Connect(function()
@@ -672,97 +454,40 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
-InfiniteHealthButton.MouseButton1Click:Connect(function()
-    infiniteHealthEnabled = not infiniteHealthEnabled
-    if infiniteHealthEnabled then
-        InfiniteHealthButton.Text = "ON"
-        InfiniteHealthButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-    else
-        InfiniteHealthButton.Text = "OFF"
-        InfiniteHealthButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-end)
-
-AutoCollectButton.MouseButton1Click:Connect(function()
-    autoCollectEnabled = not autoCollectEnabled
-    if autoCollectEnabled then
-        AutoCollectButton.Text = "ON"
-        AutoCollectButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-    else
-        AutoCollectButton.Text = "OFF"
-        AutoCollectButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-end)
-
-AntiKnockbackButton.MouseButton1Click:Connect(function()
-    antiKnockbackEnabled = not antiKnockbackEnabled
-    if antiKnockbackEnabled then
-        AntiKnockbackButton.Text = "ON"
-        AntiKnockbackButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-    else
-        AntiKnockbackButton.Text = "OFF"
-        AntiKnockbackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-end)
-
-NoClipButton.MouseButton1Click:Connect(function()
-    noClipEnabled = not noClipEnabled
-    if noClipEnabled then
-        NoClipButton.Text = "ON"
-        NoClipButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-    else
-        NoClipButton.Text = "OFF"
-        NoClipButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+AntiHitButton.MouseButton1Click:Connect(function()
+    antiHitEnabled = not antiHitEnabled
+    if antiHitEnabled then
+        AntiHitButton.Text = "ON"
+        AntiHitButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        showWarning("Anti Hit Enabled!")
+        
+        -- Set max health saat enable
         local character = player.Character
         if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.Health = humanoid.MaxHealth
+                originalMaxHealth = humanoid.MaxHealth
             end
         end
-    end
-end)
-
-KillPlayersButton.MouseButton1Click:Connect(function()
-    killMenuOpen = not killMenuOpen
-    KillMenuFrame.Visible = killMenuOpen
-    if killMenuOpen then
-        refreshPlayerList()
-    end
-end)
-
-KillMenuClose.MouseButton1Click:Connect(function()
-    killMenuOpen = false
-    KillMenuFrame.Visible = false
-end)
-
-KillAllButton.MouseButton1Click:Connect(function()
-    local killed = 0
-    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
-        if targetPlayer ~= player then
-            killPlayer(targetPlayer)
-            killed = killed + 1
-        end
-    end
-    showWarning("Killed " .. killed .. " players!")
-end)
-
-KillSelectedButton.MouseButton1Click:Connect(function()
-    local killed = 0
-    for playerName, _ in pairs(selectedPlayers) do
-        local targetPlayer = game.Players:FindFirstChild(playerName)
-        if targetPlayer then
-            killPlayer(targetPlayer)
-            killed = killed + 1
-        end
-    end
-    if killed > 0 then
-        showWarning("Killed " .. killed .. " selected player(s)!")
     else
-        showWarning("No players selected!")
+        AntiHitButton.Text = "OFF"
+        AntiHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+        showWarning("Anti Hit Disabled")
     end
-    refreshPlayerList()
+end)
+
+OneHitButton.MouseButton1Click:Connect(function()
+    oneHitEnabled = not oneHitEnabled
+    if oneHitEnabled then
+        OneHitButton.Text = "ON"
+        OneHitButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        showWarning("One Hit Kill Enabled!")
+    else
+        OneHitButton.Text = "OFF"
+        OneHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+        showWarning("One Hit Kill Disabled")
+    end
 end)
 
 MinimizeButton.MouseButton1Click:Connect(function()
@@ -799,8 +524,18 @@ player.CharacterAdded:Connect(function(character)
     local humanoid = character:WaitForChild("Humanoid")
     wait(0.1)
     humanoid.WalkSpeed = currentSpeed
+    
+    -- Setup systems untuk character baru
+    setupAntiHit(character)
+    setupOneHit(character)
 end)
 
 -- Initial Setup
+if player.Character then
+    setupAntiHit(player.Character)
+    setupOneHit(player.Character)
+end
+
 updateSpeed()
-print("Ability GUI Loaded Successfully with Kill Players Menu!")
+print("Ability GUI Loaded Successfully!")
+print("Features: Walkspeed, Infinite Jump, Anti Hit, One Hit Kill")
