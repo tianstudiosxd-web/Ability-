@@ -10,6 +10,8 @@ local currentSpeed = 16
 local infiniteJumpEnabled = false
 local isMinimized = false
 local currentCategory = "Movement"
+local guiActive = true -- Track if GUI is active
+local heartbeatConnection = nil -- Store connection for cleanup
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -20,8 +22,8 @@ local MinimizeButton = Instance.new("TextButton")
 local ExitButton = Instance.new("TextButton")
 local ContentFrame = Instance.new("Frame")
 
--- Left Side (Category Menu)
-local LeftFrame = Instance.new("Frame")
+-- Left Side (Category Menu) - SCROLLABLE
+local LeftFrame = Instance.new("ScrollingFrame")
 local MovementButton = Instance.new("TextButton")
 
 -- Right Side (Content Area)
@@ -119,43 +121,66 @@ ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 0, 0, 32)
 ContentFrame.Size = UDim2.new(1, 0, 1, -32)
 
--- LEFT FRAME (Category Menu)
+-- LEFT FRAME (Category Menu) - SCROLLABLE & IMPROVED
 LeftFrame.Name = "LeftFrame"
 LeftFrame.Parent = ContentFrame
 LeftFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 LeftFrame.BorderSizePixel = 0
 LeftFrame.Position = UDim2.new(0, 0, 0, 0)
-LeftFrame.Size = UDim2.new(0, 80, 1, 0)
+LeftFrame.Size = UDim2.new(0, 70, 1, 0)
+LeftFrame.ScrollBarThickness = 3
+LeftFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+LeftFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
 
 local LeftCorner = Instance.new("UICorner")
 LeftCorner.CornerRadius = UDim.new(0, 8)
 LeftCorner.Parent = LeftFrame
 
--- Movement Category Button
+-- UIListLayout for automatic positioning
+local LeftListLayout = Instance.new("UIListLayout")
+LeftListLayout.Parent = LeftFrame
+LeftListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LeftListLayout.Padding = UDim.new(0, 5)
+LeftListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local LeftPadding = Instance.new("UIPadding")
+LeftPadding.Parent = LeftFrame
+LeftPadding.PaddingTop = UDim.new(0, 6)
+LeftPadding.PaddingBottom = UDim.new(0, 6)
+LeftPadding.PaddingLeft = UDim.new(0, 6)
+LeftPadding.PaddingRight = UDim.new(0, 6)
+
+-- Movement Category Button (Light Gray when not selected)
 MovementButton.Name = "MovementButton"
 MovementButton.Parent = LeftFrame
-MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+MovementButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130) -- Abu-abu terang
 MovementButton.BorderSizePixel = 0
-MovementButton.Position = UDim2.new(0, 8, 0, 8)
-MovementButton.Size = UDim2.new(1, -16, 0, 35)
-MovementButton.Font = Enum.Font.Gotham
-MovementButton.Text = "Movement"
+MovementButton.Size = UDim2.new(1, -12, 0, 28)
+MovementButton.Font = Enum.Font.GothamBold
+MovementButton.Text = "Move"
 MovementButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MovementButton.TextSize = 11
+MovementButton.TextSize = 10
+MovementButton.LayoutOrder = 1
 
 local MovementCorner = Instance.new("UICorner")
-MovementCorner.CornerRadius = UDim.new(0, 6)
+MovementCorner.CornerRadius = UDim.new(0, 5)
 MovementCorner.Parent = MovementButton
+
+-- Auto-update CanvasSize for LeftFrame
+LeftListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    LeftFrame.CanvasSize = UDim2.new(0, 0, 0, LeftListLayout.AbsoluteContentSize.Y + 12)
+end)
 
 -- RIGHT FRAME (Content Area)
 RightFrame.Name = "RightFrame"
 RightFrame.Parent = ContentFrame
 RightFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 RightFrame.BorderSizePixel = 0
-RightFrame.Position = UDim2.new(0, 85, 0, 0)
-RightFrame.Size = UDim2.new(1, -85, 1, 0)
-RightFrame.ScrollBarThickness = 4
+RightFrame.Position = UDim2.new(0, 75, 0, 0)
+RightFrame.Size = UDim2.new(1, -75, 1, 0)
+RightFrame.ScrollBarThickness = 3
 RightFrame.CanvasSize = UDim2.new(0, 0, 0, 150)
+RightFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
 
 local RightCorner = Instance.new("UICorner")
 RightCorner.CornerRadius = UDim.new(0, 8)
@@ -165,12 +190,12 @@ RightCorner.Parent = RightFrame
 WalkspeedLabel.Name = "WalkspeedLabel"
 WalkspeedLabel.Parent = RightFrame
 WalkspeedLabel.BackgroundTransparency = 1
-WalkspeedLabel.Position = UDim2.new(0, 10, 0, 10)
-WalkspeedLabel.Size = UDim2.new(0, 100, 0, 20)
+WalkspeedLabel.Position = UDim2.new(0, 10, 0, 8)
+WalkspeedLabel.Size = UDim2.new(0, 100, 0, 18)
 WalkspeedLabel.Font = Enum.Font.Gotham
 WalkspeedLabel.Text = "Walkspeed:"
 WalkspeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-WalkspeedLabel.TextSize = 13
+WalkspeedLabel.TextSize = 12
 WalkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Speed Display
@@ -178,12 +203,12 @@ SpeedDisplay.Name = "SpeedDisplay"
 SpeedDisplay.Parent = RightFrame
 SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SpeedDisplay.BorderSizePixel = 0
-SpeedDisplay.Position = UDim2.new(0, 10, 0, 32)
-SpeedDisplay.Size = UDim2.new(0, 55, 0, 28)
+SpeedDisplay.Position = UDim2.new(0, 10, 0, 28)
+SpeedDisplay.Size = UDim2.new(0, 50, 0, 26)
 SpeedDisplay.Font = Enum.Font.Gotham
 SpeedDisplay.Text = tostring(currentSpeed)
 SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedDisplay.TextSize = 15
+SpeedDisplay.TextSize = 14
 
 local SpeedCorner = Instance.new("UICorner")
 SpeedCorner.CornerRadius = UDim.new(0, 5)
@@ -194,8 +219,8 @@ MinusButton.Name = "MinusButton"
 MinusButton.Parent = RightFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 MinusButton.BorderSizePixel = 0
-MinusButton.Position = UDim2.new(0, 70, 0, 32)
-MinusButton.Size = UDim2.new(0, 30, 0, 28)
+MinusButton.Position = UDim2.new(0, 65, 0, 28)
+MinusButton.Size = UDim2.new(0, 28, 0, 26)
 MinusButton.Font = Enum.Font.Gotham
 MinusButton.Text = "-"
 MinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -210,8 +235,8 @@ PlusButton.Name = "PlusButton"
 PlusButton.Parent = RightFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 PlusButton.BorderSizePixel = 0
-PlusButton.Position = UDim2.new(0, 105, 0, 32)
-PlusButton.Size = UDim2.new(0, 30, 0, 28)
+PlusButton.Position = UDim2.new(0, 98, 0, 28)
+PlusButton.Size = UDim2.new(0, 28, 0, 26)
 PlusButton.Font = Enum.Font.Gotham
 PlusButton.Text = "+"
 PlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -225,12 +250,12 @@ PlusCorner.Parent = PlusButton
 InfiniteJumpLabel.Name = "InfiniteJumpLabel"
 InfiniteJumpLabel.Parent = RightFrame
 InfiniteJumpLabel.BackgroundTransparency = 1
-InfiniteJumpLabel.Position = UDim2.new(0, 10, 0, 68)
-InfiniteJumpLabel.Size = UDim2.new(0, 100, 0, 20)
+InfiniteJumpLabel.Position = UDim2.new(0, 10, 0, 62)
+InfiniteJumpLabel.Size = UDim2.new(0, 100, 0, 18)
 InfiniteJumpLabel.Font = Enum.Font.Gotham
 InfiniteJumpLabel.Text = "Infinite Jump:"
 InfiniteJumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfiniteJumpLabel.TextSize = 13
+InfiniteJumpLabel.TextSize = 12
 InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Infinite Jump Button
@@ -238,12 +263,12 @@ InfiniteJumpButton.Name = "InfiniteJumpButton"
 InfiniteJumpButton.Parent = RightFrame
 InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
-InfiniteJumpButton.Position = UDim2.new(0, 10, 0, 90)
-InfiniteJumpButton.Size = UDim2.new(0, 60, 0, 28)
+InfiniteJumpButton.Position = UDim2.new(0, 10, 0, 82)
+InfiniteJumpButton.Size = UDim2.new(0, 55, 0, 26)
 InfiniteJumpButton.Font = Enum.Font.Gotham
 InfiniteJumpButton.Text = "OFF"
 InfiniteJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfiniteJumpButton.TextSize = 13
+InfiniteJumpButton.TextSize = 12
 
 local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
@@ -253,12 +278,12 @@ JumpCorner.Parent = InfiniteJumpButton
 WarningLabel.Name = "WarningLabel"
 WarningLabel.Parent = RightFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 10, 0, 125)
-WarningLabel.Size = UDim2.new(1, -20, 0, 18)
+WarningLabel.Position = UDim2.new(0, 10, 0, 115)
+WarningLabel.Size = UDim2.new(1, -20, 0, 16)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
 WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-WarningLabel.TextSize = 11
+WarningLabel.TextSize = 10
 WarningLabel.Visible = false
 
 -- Minimized Button (RGB Border)
@@ -307,10 +332,10 @@ end
 local function switchCategory(category)
     currentCategory = category
     
-    -- Reset all button colors
-    MovementButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    -- Reset all button colors to light gray
+    MovementButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
     
-    -- Highlight selected category
+    -- Highlight selected category with green
     if category == "Movement" then
         MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
         -- Show Movement content (already visible)
@@ -323,13 +348,40 @@ local function switchCategory(category)
     end
 end
 
--- Auto Apply Walkspeed (Setiap Frame)
-RunService.Heartbeat:Connect(function()
+-- Reset all abilities to default
+local function resetAllAbilities()
+    guiActive = false
+    
+    -- Reset walkspeed to default
     local character = player.Character
     if character then
         local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid and humanoid.WalkSpeed ~= currentSpeed then
-            humanoid.WalkSpeed = currentSpeed
+        if humanoid then
+            humanoid.WalkSpeed = 16
+        end
+    end
+    
+    -- Disable infinite jump
+    infiniteJumpEnabled = false
+    
+    -- Disconnect heartbeat connection
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+    
+    print("All abilities disabled!")
+end
+
+-- Auto Apply Walkspeed (Only when GUI is active)
+heartbeatConnection = RunService.Heartbeat:Connect(function()
+    if guiActive then
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid and humanoid.WalkSpeed ~= currentSpeed then
+                humanoid.WalkSpeed = currentSpeed
+            end
         end
     end
 end)
@@ -366,25 +418,31 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Minimize Button (Features still work)
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     MainFrame.Visible = not isMinimized
     MinimizedButton.Visible = isMinimized
+    print("GUI Minimized - Features still active!")
 end)
 
 MinimizedButton.MouseButton1Click:Connect(function()
     isMinimized = false
     MainFrame.Visible = true
     MinimizedButton.Visible = false
+    print("GUI Restored!")
 end)
 
+-- Exit Button (Reset all abilities and close GUI)
 ExitButton.MouseButton1Click:Connect(function()
+    resetAllAbilities()
     ScreenGui:Destroy()
+    print("GUI Closed - All features disabled!")
 end)
 
--- Infinite Jump Logic
+-- Infinite Jump Logic (Only when GUI is active)
 UserInputService.JumpRequest:Connect(function()
-    if infiniteJumpEnabled then
+    if guiActive and infiniteJumpEnabled then
         local character = player.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
@@ -395,9 +453,16 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Character Reset Handler (Tetap Apply Settings)
+-- Character Reset Handler (Only apply when GUI is active)
 player.CharacterAdded:Connect(function(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    wait(0.1)
-    humanoid.WalkSpeed = currentSpeed
+    if guiActive then
+        local humanoid = character:WaitForChild("Humanoid")
+        wait(0.1)
+        humanoid.WalkSpeed = currentSpeed
+    else
+        -- Reset to default if GUI is closed
+        local humanoid = character:WaitForChild("Humanoid")
+        wait(0.1)
+        humanoid.WalkSpeed = 16
+    end
 end)
