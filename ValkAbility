@@ -1,5 +1,5 @@
 -- Universal Roblox Ability Script
--- Walkspeed & Infinite Jump GUI with Category System
+-- Walkspeed, Jump Height & Infinite Jump GUI with Category System
 
 local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 -- Variables
 local currentSpeed = 16
+local currentJumpHeight = 7.2 -- Default Jump Height
 local infiniteJumpEnabled = false
 local isMinimized = false
 local currentCategory = "Movement"
@@ -32,6 +33,13 @@ local WalkspeedLabel = Instance.new("TextLabel")
 local SpeedDisplay = Instance.new("TextLabel")
 local MinusButton = Instance.new("TextButton")
 local PlusButton = Instance.new("TextButton")
+
+-- Jump Height Elements
+local JumpHeightLabel = Instance.new("TextLabel")
+local JumpHeightDisplay = Instance.new("TextLabel")
+local JumpMinusButton = Instance.new("TextButton")
+local JumpPlusButton = Instance.new("TextButton")
+
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
 local WarningLabel = Instance.new("TextLabel")
@@ -50,8 +58,8 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -90)
-MainFrame.Size = UDim2.new(0, 280, 0, 180)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -110) -- Adjusted for more height
+MainFrame.Size = UDim2.new(0, 280, 0, 220) -- Increased height
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -127,7 +135,7 @@ LeftFrame.Parent = ContentFrame
 LeftFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 LeftFrame.BorderSizePixel = 0
 LeftFrame.Position = UDim2.new(0, 0, 0, 0)
-LeftFrame.Size = UDim2.new(0, 85, 1, 0) -- Dari 70 menjadi 85
+LeftFrame.Size = UDim2.new(0, 85, 1, 0)
 LeftFrame.ScrollBarThickness = 3
 LeftFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 LeftFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
@@ -150,10 +158,10 @@ LeftPadding.PaddingBottom = UDim.new(0, 6)
 LeftPadding.PaddingLeft = UDim.new(0, 7)
 LeftPadding.PaddingRight = UDim.new(0, 7)
 
--- Movement Category Button (Light Gray when not selected)
+-- Movement Category Button
 MovementButton.Name = "MovementButton"
 MovementButton.Parent = LeftFrame
-MovementButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130) -- Abu-abu terang
+MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70) -- Green by default
 MovementButton.BorderSizePixel = 0
 MovementButton.Size = UDim2.new(1, -14, 0, 28)
 MovementButton.Font = Enum.Font.GothamBold
@@ -176,10 +184,10 @@ RightFrame.Name = "RightFrame"
 RightFrame.Parent = ContentFrame
 RightFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 RightFrame.BorderSizePixel = 0
-RightFrame.Position = UDim2.new(0, 90, 0, 0) -- Dari 75 menjadi 90
-RightFrame.Size = UDim2.new(1, -90, 1, 0) -- Dari -75 menjadi -90
+RightFrame.Position = UDim2.new(0, 90, 0, 0)
+RightFrame.Size = UDim2.new(1, -90, 1, 0)
 RightFrame.ScrollBarThickness = 3
-RightFrame.CanvasSize = UDim2.new(0, 0, 0, 150)
+RightFrame.CanvasSize = UDim2.new(0, 0, 0, 200) -- Increased canvas size
 RightFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
 
 local RightCorner = Instance.new("UICorner")
@@ -214,7 +222,7 @@ local SpeedCorner = Instance.new("UICorner")
 SpeedCorner.CornerRadius = UDim.new(0, 5)
 SpeedCorner.Parent = SpeedDisplay
 
--- Minus Button
+-- Minus Button (Walkspeed)
 MinusButton.Name = "MinusButton"
 MinusButton.Parent = RightFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
@@ -230,7 +238,7 @@ local MinusCorner = Instance.new("UICorner")
 MinusCorner.CornerRadius = UDim.new(0, 5)
 MinusCorner.Parent = MinusButton
 
--- Plus Button
+-- Plus Button (Walkspeed)
 PlusButton.Name = "PlusButton"
 PlusButton.Parent = RightFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
@@ -246,11 +254,72 @@ local PlusCorner = Instance.new("UICorner")
 PlusCorner.CornerRadius = UDim.new(0, 5)
 PlusCorner.Parent = PlusButton
 
--- Infinite Jump Label
+-- ============ JUMP HEIGHT SECTION ============
+-- Jump Height Label
+JumpHeightLabel.Name = "JumpHeightLabel"
+JumpHeightLabel.Parent = RightFrame
+JumpHeightLabel.BackgroundTransparency = 1
+JumpHeightLabel.Position = UDim2.new(0, 10, 0, 62)
+JumpHeightLabel.Size = UDim2.new(0, 100, 0, 18)
+JumpHeightLabel.Font = Enum.Font.Gotham
+JumpHeightLabel.Text = "Jump Height:"
+JumpHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpHeightLabel.TextSize = 12
+JumpHeightLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Jump Height Display
+JumpHeightDisplay.Name = "JumpHeightDisplay"
+JumpHeightDisplay.Parent = RightFrame
+JumpHeightDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+JumpHeightDisplay.BorderSizePixel = 0
+JumpHeightDisplay.Position = UDim2.new(0, 10, 0, 82)
+JumpHeightDisplay.Size = UDim2.new(0, 50, 0, 26)
+JumpHeightDisplay.Font = Enum.Font.Gotham
+JumpHeightDisplay.Text = tostring(currentJumpHeight)
+JumpHeightDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpHeightDisplay.TextSize = 14
+
+local JumpHeightCorner = Instance.new("UICorner")
+JumpHeightCorner.CornerRadius = UDim.new(0, 5)
+JumpHeightCorner.Parent = JumpHeightDisplay
+
+-- Jump Minus Button
+JumpMinusButton.Name = "JumpMinusButton"
+JumpMinusButton.Parent = RightFrame
+JumpMinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+JumpMinusButton.BorderSizePixel = 0
+JumpMinusButton.Position = UDim2.new(0, 65, 0, 82)
+JumpMinusButton.Size = UDim2.new(0, 28, 0, 26)
+JumpMinusButton.Font = Enum.Font.GothamBold
+JumpMinusButton.Text = "-"
+JumpMinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpMinusButton.TextSize = 18
+
+local JumpMinusCorner = Instance.new("UICorner")
+JumpMinusCorner.CornerRadius = UDim.new(0, 5)
+JumpMinusCorner.Parent = JumpMinusButton
+
+-- Jump Plus Button
+JumpPlusButton.Name = "JumpPlusButton"
+JumpPlusButton.Parent = RightFrame
+JumpPlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+JumpPlusButton.BorderSizePixel = 0
+JumpPlusButton.Position = UDim2.new(0, 98, 0, 82)
+JumpPlusButton.Size = UDim2.new(0, 28, 0, 26)
+JumpPlusButton.Font = Enum.Font.GothamBold
+JumpPlusButton.Text = "+"
+JumpPlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpPlusButton.TextSize = 18
+
+local JumpPlusCorner = Instance.new("UICorner")
+JumpPlusCorner.CornerRadius = UDim.new(0, 5)
+JumpPlusCorner.Parent = JumpPlusButton
+
+-- Infinite Jump Label (moved down)
 InfiniteJumpLabel.Name = "InfiniteJumpLabel"
 InfiniteJumpLabel.Parent = RightFrame
 InfiniteJumpLabel.BackgroundTransparency = 1
-InfiniteJumpLabel.Position = UDim2.new(0, 10, 0, 62)
+InfiniteJumpLabel.Position = UDim2.new(0, 10, 0, 116)
 InfiniteJumpLabel.Size = UDim2.new(0, 100, 0, 18)
 InfiniteJumpLabel.Font = Enum.Font.Gotham
 InfiniteJumpLabel.Text = "Infinite Jump:"
@@ -258,12 +327,12 @@ InfiniteJumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfiniteJumpLabel.TextSize = 12
 InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Infinite Jump Button
+-- Infinite Jump Button (moved down)
 InfiniteJumpButton.Name = "InfiniteJumpButton"
 InfiniteJumpButton.Parent = RightFrame
 InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
-InfiniteJumpButton.Position = UDim2.new(0, 10, 0, 82)
+InfiniteJumpButton.Position = UDim2.new(0, 10, 0, 136)
 InfiniteJumpButton.Size = UDim2.new(0, 55, 0, 26)
 InfiniteJumpButton.Font = Enum.Font.Gotham
 InfiniteJumpButton.Text = "OFF"
@@ -274,11 +343,11 @@ local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
 JumpCorner.Parent = InfiniteJumpButton
 
--- Warning Label
+-- Warning Label (moved down)
 WarningLabel.Name = "WarningLabel"
 WarningLabel.Parent = RightFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 10, 0, 115)
+WarningLabel.Position = UDim2.new(0, 10, 0, 170)
 WarningLabel.Size = UDim2.new(1, -20, 0, 16)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
@@ -322,6 +391,10 @@ local function updateSpeed()
     SpeedDisplay.Text = tostring(currentSpeed)
 end
 
+local function updateJumpHeight()
+    JumpHeightDisplay.Text = tostring(currentJumpHeight)
+end
+
 local function showWarning(message)
     WarningLabel.Text = message
     WarningLabel.Visible = true
@@ -338,11 +411,15 @@ local function switchCategory(category)
     -- Highlight selected category with green
     if category == "Movement" then
         MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-        -- Show Movement content (already visible)
+        -- Show Movement content
         WalkspeedLabel.Visible = true
         SpeedDisplay.Visible = true
         MinusButton.Visible = true
         PlusButton.Visible = true
+        JumpHeightLabel.Visible = true
+        JumpHeightDisplay.Visible = true
+        JumpMinusButton.Visible = true
+        JumpPlusButton.Visible = true
         InfiniteJumpLabel.Visible = true
         InfiniteJumpButton.Visible = true
     end
@@ -358,6 +435,7 @@ local function resetAllAbilities()
         local humanoid = character:FindFirstChild("Humanoid")
         if humanoid then
             humanoid.WalkSpeed = 16
+            humanoid.JumpHeight = 7.2
         end
     end
     
@@ -373,14 +451,19 @@ local function resetAllAbilities()
     print("All abilities disabled!")
 end
 
--- Auto Apply Walkspeed (Only when GUI is active)
+-- Auto Apply Walkspeed & Jump Height (Only when GUI is active)
 heartbeatConnection = RunService.Heartbeat:Connect(function()
     if guiActive then
         local character = player.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid and humanoid.WalkSpeed ~= currentSpeed then
-                humanoid.WalkSpeed = currentSpeed
+            if humanoid then
+                if humanoid.WalkSpeed ~= currentSpeed then
+                    humanoid.WalkSpeed = currentSpeed
+                end
+                if humanoid.JumpHeight ~= currentJumpHeight then
+                    humanoid.JumpHeight = currentJumpHeight
+                end
             end
         end
     end
@@ -391,12 +474,13 @@ MovementButton.MouseButton1Click:Connect(function()
     switchCategory("Movement")
 end)
 
+-- Walkspeed Buttons
 PlusButton.MouseButton1Click:Connect(function()
     if currentSpeed < 100 then
         currentSpeed = currentSpeed + 1
         updateSpeed()
     else
-        showWarning("Cannot be more than 100")
+        showWarning("Walkspeed cannot be more than 100")
     end
 end)
 
@@ -407,6 +491,24 @@ MinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Jump Height Buttons
+JumpPlusButton.MouseButton1Click:Connect(function()
+    if currentJumpHeight < 50 then
+        currentJumpHeight = math.floor((currentJumpHeight + 0.5) * 10 + 0.5) / 10 -- Increment by 0.5
+        updateJumpHeight()
+    else
+        showWarning("Jump Height cannot be more than 50")
+    end
+end)
+
+JumpMinusButton.MouseButton1Click:Connect(function()
+    if currentJumpHeight > 1 then
+        currentJumpHeight = math.floor((currentJumpHeight - 0.5) * 10 + 0.5) / 10 -- Decrement by 0.5
+        updateJumpHeight()
+    end
+end)
+
+-- Infinite Jump Button
 InfiniteJumpButton.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
     if infiniteJumpEnabled then
@@ -459,10 +561,12 @@ player.CharacterAdded:Connect(function(character)
         local humanoid = character:WaitForChild("Humanoid")
         wait(0.1)
         humanoid.WalkSpeed = currentSpeed
+        humanoid.JumpHeight = currentJumpHeight
     else
         -- Reset to default if GUI is closed
         local humanoid = character:WaitForChild("Humanoid")
         wait(0.1)
         humanoid.WalkSpeed = 16
+        humanoid.JumpHeight = 7.2
     end
 end)
