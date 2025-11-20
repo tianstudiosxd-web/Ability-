@@ -1,5 +1,5 @@
 -- Universal Roblox Ability Script
--- Walkspeed & Infinite Jump GUI
+-- Walkspeed & Infinite Jump GUI with Category System
 
 local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -9,8 +9,7 @@ local RunService = game:GetService("RunService")
 local currentSpeed = 16
 local infiniteJumpEnabled = false
 local isMinimized = false
-local superKnockbackEnabled = false
-local knockbackPower = 10
+local currentCategory = "Movement"
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -20,18 +19,21 @@ local TitleLabel = Instance.new("TextLabel")
 local MinimizeButton = Instance.new("TextButton")
 local ExitButton = Instance.new("TextButton")
 local ContentFrame = Instance.new("Frame")
+
+-- Left Side (Category Menu)
+local LeftFrame = Instance.new("Frame")
+local MovementButton = Instance.new("TextButton")
+
+-- Right Side (Content Area)
+local RightFrame = Instance.new("ScrollingFrame")
 local WalkspeedLabel = Instance.new("TextLabel")
 local SpeedDisplay = Instance.new("TextLabel")
 local MinusButton = Instance.new("TextButton")
 local PlusButton = Instance.new("TextButton")
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
-local KnockbackLabel = Instance.new("TextLabel")
-local KnockbackButton = Instance.new("TextButton")
-local KnockbackDisplay = Instance.new("TextLabel")
-local KnockbackMinusButton = Instance.new("TextButton")
-local KnockbackPlusButton = Instance.new("TextButton")
 local WarningLabel = Instance.new("TextLabel")
+
 local MinimizedButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 local UIStroke = Instance.new("UIStroke")
@@ -41,13 +43,13 @@ ScreenGui.Name = "AbilityGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Main Frame (Lebih besar untuk menampung fitur baru)
+-- Main Frame
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -120)
-MainFrame.Size = UDim2.new(0, 280, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -90)
+MainFrame.Size = UDim2.new(0, 280, 0, 180)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -117,11 +119,53 @@ ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 0, 0, 32)
 ContentFrame.Size = UDim2.new(1, 0, 1, -32)
 
+-- LEFT FRAME (Category Menu)
+LeftFrame.Name = "LeftFrame"
+LeftFrame.Parent = ContentFrame
+LeftFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+LeftFrame.BorderSizePixel = 0
+LeftFrame.Position = UDim2.new(0, 0, 0, 0)
+LeftFrame.Size = UDim2.new(0, 80, 1, 0)
+
+local LeftCorner = Instance.new("UICorner")
+LeftCorner.CornerRadius = UDim.new(0, 8)
+LeftCorner.Parent = LeftFrame
+
+-- Movement Category Button
+MovementButton.Name = "MovementButton"
+MovementButton.Parent = LeftFrame
+MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+MovementButton.BorderSizePixel = 0
+MovementButton.Position = UDim2.new(0, 8, 0, 8)
+MovementButton.Size = UDim2.new(1, -16, 0, 35)
+MovementButton.Font = Enum.Font.Gotham
+MovementButton.Text = "Movement"
+MovementButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MovementButton.TextSize = 11
+
+local MovementCorner = Instance.new("UICorner")
+MovementCorner.CornerRadius = UDim.new(0, 6)
+MovementCorner.Parent = MovementButton
+
+-- RIGHT FRAME (Content Area)
+RightFrame.Name = "RightFrame"
+RightFrame.Parent = ContentFrame
+RightFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+RightFrame.BorderSizePixel = 0
+RightFrame.Position = UDim2.new(0, 85, 0, 0)
+RightFrame.Size = UDim2.new(1, -85, 1, 0)
+RightFrame.ScrollBarThickness = 4
+RightFrame.CanvasSize = UDim2.new(0, 0, 0, 150)
+
+local RightCorner = Instance.new("UICorner")
+RightCorner.CornerRadius = UDim.new(0, 8)
+RightCorner.Parent = RightFrame
+
 -- Walkspeed Label
 WalkspeedLabel.Name = "WalkspeedLabel"
-WalkspeedLabel.Parent = ContentFrame
+WalkspeedLabel.Parent = RightFrame
 WalkspeedLabel.BackgroundTransparency = 1
-WalkspeedLabel.Position = UDim2.new(0, 15, 0, 10)
+WalkspeedLabel.Position = UDim2.new(0, 10, 0, 10)
 WalkspeedLabel.Size = UDim2.new(0, 100, 0, 20)
 WalkspeedLabel.Font = Enum.Font.Gotham
 WalkspeedLabel.Text = "Walkspeed:"
@@ -131,11 +175,11 @@ WalkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Speed Display
 SpeedDisplay.Name = "SpeedDisplay"
-SpeedDisplay.Parent = ContentFrame
+SpeedDisplay.Parent = RightFrame
 SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SpeedDisplay.BorderSizePixel = 0
-SpeedDisplay.Position = UDim2.new(0, 15, 0, 32)
-SpeedDisplay.Size = UDim2.new(0, 70, 0, 28)
+SpeedDisplay.Position = UDim2.new(0, 10, 0, 32)
+SpeedDisplay.Size = UDim2.new(0, 55, 0, 28)
 SpeedDisplay.Font = Enum.Font.Gotham
 SpeedDisplay.Text = tostring(currentSpeed)
 SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -147,11 +191,11 @@ SpeedCorner.Parent = SpeedDisplay
 
 -- Minus Button
 MinusButton.Name = "MinusButton"
-MinusButton.Parent = ContentFrame
+MinusButton.Parent = RightFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 MinusButton.BorderSizePixel = 0
-MinusButton.Position = UDim2.new(0, 90, 0, 32)
-MinusButton.Size = UDim2.new(0, 32, 0, 28)
+MinusButton.Position = UDim2.new(0, 70, 0, 32)
+MinusButton.Size = UDim2.new(0, 30, 0, 28)
 MinusButton.Font = Enum.Font.Gotham
 MinusButton.Text = "-"
 MinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -163,11 +207,11 @@ MinusCorner.Parent = MinusButton
 
 -- Plus Button
 PlusButton.Name = "PlusButton"
-PlusButton.Parent = ContentFrame
+PlusButton.Parent = RightFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 PlusButton.BorderSizePixel = 0
-PlusButton.Position = UDim2.new(0, 127, 0, 32)
-PlusButton.Size = UDim2.new(0, 32, 0, 28)
+PlusButton.Position = UDim2.new(0, 105, 0, 32)
+PlusButton.Size = UDim2.new(0, 30, 0, 28)
 PlusButton.Font = Enum.Font.Gotham
 PlusButton.Text = "+"
 PlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -179,9 +223,9 @@ PlusCorner.Parent = PlusButton
 
 -- Infinite Jump Label
 InfiniteJumpLabel.Name = "InfiniteJumpLabel"
-InfiniteJumpLabel.Parent = ContentFrame
+InfiniteJumpLabel.Parent = RightFrame
 InfiniteJumpLabel.BackgroundTransparency = 1
-InfiniteJumpLabel.Position = UDim2.new(0, 15, 0, 68)
+InfiniteJumpLabel.Position = UDim2.new(0, 10, 0, 68)
 InfiniteJumpLabel.Size = UDim2.new(0, 100, 0, 20)
 InfiniteJumpLabel.Font = Enum.Font.Gotham
 InfiniteJumpLabel.Text = "Infinite Jump:"
@@ -191,11 +235,11 @@ InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Infinite Jump Button
 InfiniteJumpButton.Name = "InfiniteJumpButton"
-InfiniteJumpButton.Parent = ContentFrame
+InfiniteJumpButton.Parent = RightFrame
 InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
-InfiniteJumpButton.Position = UDim2.new(0, 15, 0, 90)
-InfiniteJumpButton.Size = UDim2.new(0, 70, 0, 28)
+InfiniteJumpButton.Position = UDim2.new(0, 10, 0, 90)
+InfiniteJumpButton.Size = UDim2.new(0, 60, 0, 28)
 InfiniteJumpButton.Font = Enum.Font.Gotham
 InfiniteJumpButton.Text = "OFF"
 InfiniteJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -205,88 +249,12 @@ local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
 JumpCorner.Parent = InfiniteJumpButton
 
--- Knockback Label
-KnockbackLabel.Name = "KnockbackLabel"
-KnockbackLabel.Parent = ContentFrame
-KnockbackLabel.BackgroundTransparency = 1
-KnockbackLabel.Position = UDim2.new(0, 15, 0, 126)
-KnockbackLabel.Size = UDim2.new(0, 120, 0, 20)
-KnockbackLabel.Font = Enum.Font.Gotham
-KnockbackLabel.Text = "Knockback"
-KnockbackLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-KnockbackLabel.TextSize = 13
-KnockbackLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Knockback Button
-KnockbackButton.Name = "KnockbackButton"
-KnockbackButton.Parent = ContentFrame
-KnockbackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-KnockbackButton.BorderSizePixel = 0
-KnockbackButton.Position = UDim2.new(0, 15, 0, 148)
-KnockbackButton.Size = UDim2.new(0, 70, 0, 28)
-KnockbackButton.Font = Enum.Font.Gotham
-KnockbackButton.Text = "OFF"
-KnockbackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KnockbackButton.TextSize = 13
-
-local KnockCorner = Instance.new("UICorner")
-KnockCorner.CornerRadius = UDim.new(0, 5)
-KnockCorner.Parent = KnockbackButton
-
--- Knockback Display
-KnockbackDisplay.Name = "KnockbackDisplay"
-KnockbackDisplay.Parent = ContentFrame
-KnockbackDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-KnockbackDisplay.BorderSizePixel = 0
-KnockbackDisplay.Position = UDim2.new(0, 165, 0, 148)
-KnockbackDisplay.Size = UDim2.new(0, 35, 0, 28)
-KnockbackDisplay.Font = Enum.Font.Gotham
-KnockbackDisplay.Text = tostring(knockbackPower)
-KnockbackDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-KnockbackDisplay.TextSize = 13
-
-local KnockDisplayCorner = Instance.new("UICorner")
-KnockDisplayCorner.CornerRadius = UDim.new(0, 5)
-KnockDisplayCorner.Parent = KnockbackDisplay
-
--- Knockback Minus Button
-KnockbackMinusButton.Name = "KnockbackMinusButton"
-KnockbackMinusButton.Parent = ContentFrame
-KnockbackMinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-KnockbackMinusButton.BorderSizePixel = 0
-KnockbackMinusButton.Position = UDim2.new(0, 205, 0, 148)
-KnockbackMinusButton.Size = UDim2.new(0, 28, 0, 28)
-KnockbackMinusButton.Font = Enum.Font.Gotham
-KnockbackMinusButton.Text = "-"
-KnockbackMinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KnockbackMinusButton.TextSize = 16
-
-local KnockMinusCorner = Instance.new("UICorner")
-KnockMinusCorner.CornerRadius = UDim.new(0, 5)
-KnockMinusCorner.Parent = KnockbackMinusButton
-
--- Knockback Plus Button
-KnockbackPlusButton.Name = "KnockbackPlusButton"
-KnockbackPlusButton.Parent = ContentFrame
-KnockbackPlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-KnockbackPlusButton.BorderSizePixel = 0
-KnockbackPlusButton.Position = UDim2.new(0, 237, 0, 148)
-KnockbackPlusButton.Size = UDim2.new(0, 28, 0, 28)
-KnockbackPlusButton.Font = Enum.Font.Gotham
-KnockbackPlusButton.Text = "+"
-KnockbackPlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KnockbackPlusButton.TextSize = 16
-
-local KnockPlusCorner = Instance.new("UICorner")
-KnockPlusCorner.CornerRadius = UDim.new(0, 5)
-KnockPlusCorner.Parent = KnockbackPlusButton
-
 -- Warning Label
 WarningLabel.Name = "WarningLabel"
-WarningLabel.Parent = ContentFrame
+WarningLabel.Parent = RightFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 15, 0, 185)
-WarningLabel.Size = UDim2.new(1, -30, 0, 18)
+WarningLabel.Position = UDim2.new(0, 10, 0, 125)
+WarningLabel.Size = UDim2.new(1, -20, 0, 18)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
 WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -329,15 +297,30 @@ local function updateSpeed()
     SpeedDisplay.Text = tostring(currentSpeed)
 end
 
-local function updateKnockback()
-    KnockbackDisplay.Text = tostring(knockbackPower)
-end
-
 local function showWarning(message)
     WarningLabel.Text = message
     WarningLabel.Visible = true
     wait(2)
     WarningLabel.Visible = false
+end
+
+local function switchCategory(category)
+    currentCategory = category
+    
+    -- Reset all button colors
+    MovementButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    
+    -- Highlight selected category
+    if category == "Movement" then
+        MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        -- Show Movement content (already visible)
+        WalkspeedLabel.Visible = true
+        SpeedDisplay.Visible = true
+        MinusButton.Visible = true
+        PlusButton.Visible = true
+        InfiniteJumpLabel.Visible = true
+        InfiniteJumpButton.Visible = true
+    end
 end
 
 -- Auto Apply Walkspeed (Setiap Frame)
@@ -351,82 +334,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Super Knockback System
-local function applyKnockback(targetCharacter)
-    if not superKnockbackEnabled then return end
-    if not targetCharacter then return end
-    
-    local targetHumanoid = targetCharacter:FindFirstChild("Humanoid")
-    local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
-    local myCharacter = player.Character
-    
-    if targetHumanoid and targetRootPart and myCharacter then
-        local myRootPart = myCharacter:FindFirstChild("HumanoidRootPart")
-        if myRootPart then
-            -- Calculate direction from player to target
-            local direction = (targetRootPart.Position - myRootPart.Position).Unit
-            
-            -- Apply knockback force
-            local bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
-            bodyVelocity.Velocity = direction * (knockbackPower * 10) + Vector3.new(0, knockbackPower * 5, 0)
-            bodyVelocity.Parent = targetRootPart
-            
-            game:GetService("Debris"):AddItem(bodyVelocity, 0.15)
-        end
-    end
-end
-
--- Monitor for punches/hits
-player.CharacterAdded:Connect(function(character)
-    character.DescendantAdded:Connect(function(descendant)
-        if descendant:IsA("Tool") then
-            descendant.Activated:Connect(function()
-                if superKnockbackEnabled then
-                    -- Wait a tiny bit for hit detection
-                    wait(0.05)
-                    
-                    -- Find nearby players
-                    local myRootPart = character:FindFirstChild("HumanoidRootPart")
-                    if myRootPart then
-                        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-                            if otherPlayer ~= player and otherPlayer.Character then
-                                local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                                if targetRoot then
-                                    local distance = (myRootPart.Position - targetRoot.Position).Magnitude
-                                    if distance <= 10 then
-                                        applyKnockback(otherPlayer.Character)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end)
+-- Button Functions
+MovementButton.MouseButton1Click:Connect(function()
+    switchCategory("Movement")
 end)
 
--- Alternative: Monitor touched events for punches
-if player.Character then
-    for _, part in pairs(player.Character:GetChildren()) do
-        if part:IsA("BasePart") and (part.Name == "Left Arm" or part.Name == "Right Arm" or part.Name == "LeftHand" or part.Name == "RightHand") then
-            part.Touched:Connect(function(hit)
-                if superKnockbackEnabled then
-                    local targetCharacter = hit.Parent
-                    if targetCharacter and targetCharacter:FindFirstChild("Humanoid") then
-                        local targetPlayer = game.Players:GetPlayerFromCharacter(targetCharacter)
-                        if targetPlayer and targetPlayer ~= player then
-                            applyKnockback(targetCharacter)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end
-
--- Button Functions
 PlusButton.MouseButton1Click:Connect(function()
     if currentSpeed < 100 then
         currentSpeed = currentSpeed + 1
@@ -443,22 +355,6 @@ MinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
-KnockbackPlusButton.MouseButton1Click:Connect(function()
-    if knockbackPower < 50 then
-        knockbackPower = knockbackPower + 1
-        updateKnockback()
-    else
-        showWarning("Cannot be more than 50")
-    end
-end)
-
-KnockbackMinusButton.MouseButton1Click:Connect(function()
-    if knockbackPower > 1 then
-        knockbackPower = knockbackPower - 1
-        updateKnockback()
-    end
-end)
-
 InfiniteJumpButton.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
     if infiniteJumpEnabled then
@@ -467,17 +363,6 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     else
         InfiniteJumpButton.Text = "OFF"
         InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-end)
-
-KnockbackButton.MouseButton1Click:Connect(function()
-    superKnockbackEnabled = not superKnockbackEnabled
-    if superKnockbackEnabled then
-        KnockbackButton.Text = "ON"
-        KnockbackButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-    else
-        KnockbackButton.Text = "OFF"
-        KnockbackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
 end)
 
@@ -515,28 +400,4 @@ player.CharacterAdded:Connect(function(character)
     local humanoid = character:WaitForChild("Humanoid")
     wait(0.1)
     humanoid.WalkSpeed = currentSpeed
-    
-    -- Re-attach touch events for knockback
-    wait(0.5)
-    for _, part in pairs(character:GetChildren()) do
-        if part:IsA("BasePart") and (part.Name == "Left Arm" or part.Name == "Right Arm" or part.Name == "LeftHand" or part.Name == "RightHand") then
-            part.Touched:Connect(function(hit)
-                if superKnockbackEnabled then
-                    local targetCharacter = hit.Parent
-                    if targetCharacter and targetCharacter:FindFirstChild("Humanoid") then
-                        local targetPlayer = game.Players:GetPlayerFromCharacter(targetCharacter)
-                        if targetPlayer and targetPlayer ~= player then
-                            applyKnockback(targetCharacter)
-                        end
-                    end
-                end
-            end)
-        end
-    end
 end)
-
--- Initial Setup
-updateSpeed()
-updateKnockback()
-print("Ability GUI Loaded Successfully!")
-print("Super Knockback Feature Added!")
