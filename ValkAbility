@@ -425,8 +425,16 @@ local function setInvisibility(enabled)
     if not character then return end
     
     if enabled then
+        -- Make all parts invisible
         for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("Decal") then
+            if part:IsA("BasePart") then
+                originalTransparency[part] = part.Transparency
+                part.Transparency = 1
+                -- Disable CanCollide for complete invisibility
+                if part.Name ~= "HumanoidRootPart" then
+                    part.CanCollide = false
+                end
+            elseif part:IsA("Decal") or part:IsA("Texture") then
                 originalTransparency[part] = part.Transparency
                 part.Transparency = 1
             elseif part:IsA("Accessory") then
@@ -434,10 +442,15 @@ local function setInvisibility(enabled)
                 if handle then
                     originalTransparency[handle] = handle.Transparency
                     handle.Transparency = 1
+                    handle.CanCollide = false
                 end
+            elseif part:IsA("ParticleEmitter") or part:IsA("Fire") or part:IsA("Smoke") or part:IsA("Sparkles") then
+                originalTransparency[part] = part.Enabled
+                part.Enabled = false
             end
         end
         
+        -- Hide face
         local head = character:FindFirstChild("Head")
         if head then
             local face = head:FindFirstChild("face")
@@ -445,17 +458,54 @@ local function setInvisibility(enabled)
                 originalTransparency[face] = face.Transparency
                 face.Transparency = 1
             end
+            
+            -- Hide nametag by destroying or hiding GUI elements
+            for _, gui in pairs(head:GetChildren()) do
+                if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
+                    originalTransparency[gui] = gui.Enabled
+                    gui.Enabled = false
+                end
+            end
         end
         
-        print("Invisibility: ON")
+        -- Hide nameplate/overhead display (method 1)
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            originalTransparency[humanoid] = humanoid.DisplayDistanceType
+            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        end
+        
+        -- Hide nameplate (method 2 - for games with custom nametags)
+        for _, obj in pairs(character:GetDescendants()) do
+            if obj:IsA("BillboardGui") and (obj.Name:lower():find("name") or obj.Name:lower():find("tag") or obj.Name:lower():find("health")) then
+                originalTransparency[obj] = obj.Enabled
+                obj.Enabled = false
+            end
+        end
+        
+        print("Invisibility: ON - Completely invisible with hidden nametag!")
     else
-        for part, transparency in pairs(originalTransparency) do
+        -- Restore all original properties
+        for part, value in pairs(originalTransparency) do
             if part and part.Parent then
-                part.Transparency = transparency
+                if part:IsA("BasePart") then
+                    part.Transparency = value
+                    if part.Name ~= "HumanoidRootPart" then
+                        part.CanCollide = true
+                    end
+                elseif part:IsA("Decal") or part:IsA("Texture") then
+                    part.Transparency = value
+                elseif part:IsA("ParticleEmitter") or part:IsA("Fire") or part:IsA("Smoke") or part:IsA("Sparkles") then
+                    part.Enabled = value
+                elseif part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
+                    part.Enabled = value
+                elseif part:IsA("Humanoid") then
+                    part.DisplayDistanceType = value
+                end
             end
         end
         originalTransparency = {}
-        print("Invisibility: OFF")
+        print("Invisibility: OFF - You are now visible with nametag!")
     end
 end
 
