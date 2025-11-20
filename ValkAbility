@@ -1,5 +1,5 @@
 -- Universal Roblox Ability Script
--- Walkspeed, Infinite Jump, Anti Hit & One Hit GUI
+-- Walkspeed & Infinite Jump GUI
 
 local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -8,13 +8,9 @@ local RunService = game:GetService("RunService")
 -- Variables
 local currentSpeed = 16
 local infiniteJumpEnabled = false
-local antiHitEnabled = false
-local oneHitEnabled = false
 local isMinimized = false
-
--- Store original health values
-local originalHealth = 100
-local originalMaxHealth = 100
+local superKnockbackEnabled = false
+local knockbackPower = 10
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -23,17 +19,18 @@ local TopBar = Instance.new("Frame")
 local TitleLabel = Instance.new("TextLabel")
 local MinimizeButton = Instance.new("TextButton")
 local ExitButton = Instance.new("TextButton")
-local ContentFrame = Instance.new("ScrollingFrame")
+local ContentFrame = Instance.new("Frame")
 local WalkspeedLabel = Instance.new("TextLabel")
 local SpeedDisplay = Instance.new("TextLabel")
 local MinusButton = Instance.new("TextButton")
 local PlusButton = Instance.new("TextButton")
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
-local AntiHitLabel = Instance.new("TextLabel")
-local AntiHitButton = Instance.new("TextButton")
-local OneHitLabel = Instance.new("TextLabel")
-local OneHitButton = Instance.new("TextButton")
+local KnockbackLabel = Instance.new("TextLabel")
+local KnockbackButton = Instance.new("TextButton")
+local KnockbackDisplay = Instance.new("TextLabel")
+local KnockbackMinusButton = Instance.new("TextButton")
+local KnockbackPlusButton = Instance.new("TextButton")
 local WarningLabel = Instance.new("TextLabel")
 local MinimizedButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
@@ -44,13 +41,13 @@ ScreenGui.Name = "AbilityGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Main Frame (Diperbesar untuk fitur tambahan)
+-- Main Frame (Lebih besar untuk menampung fitur baru)
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -130)
-MainFrame.Size = UDim2.new(0, 280, 0, 260)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -120)
+MainFrame.Size = UDim2.new(0, 280, 0, 240)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -76,7 +73,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
 TitleLabel.Font = Enum.Font.Gotham
-TitleLabel.Text = "Ability Hub"
+TitleLabel.Text = "Ability"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -113,15 +110,12 @@ local ExitCorner = Instance.new("UICorner")
 ExitCorner.CornerRadius = UDim.new(0, 4)
 ExitCorner.Parent = ExitButton
 
--- Content Frame (ScrollingFrame untuk fitur lebih banyak)
+-- Content Frame
 ContentFrame.Name = "ContentFrame"
 ContentFrame.Parent = MainFrame
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 0, 0, 32)
 ContentFrame.Size = UDim2.new(1, 0, 1, -32)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 250)
-ContentFrame.ScrollBarThickness = 4
-ContentFrame.BorderSizePixel = 0
 
 -- Walkspeed Label
 WalkspeedLabel.Name = "WalkspeedLabel"
@@ -211,67 +205,87 @@ local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
 JumpCorner.Parent = InfiniteJumpButton
 
--- Anti Hit Label
-AntiHitLabel.Name = "AntiHitLabel"
-AntiHitLabel.Parent = ContentFrame
-AntiHitLabel.BackgroundTransparency = 1
-AntiHitLabel.Position = UDim2.new(0, 15, 0, 126)
-AntiHitLabel.Size = UDim2.new(0, 100, 0, 20)
-AntiHitLabel.Font = Enum.Font.Gotham
-AntiHitLabel.Text = "Anti Hit:"
-AntiHitLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-AntiHitLabel.TextSize = 13
-AntiHitLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- Knockback Label
+KnockbackLabel.Name = "KnockbackLabel"
+KnockbackLabel.Parent = ContentFrame
+KnockbackLabel.BackgroundTransparency = 1
+KnockbackLabel.Position = UDim2.new(0, 15, 0, 126)
+KnockbackLabel.Size = UDim2.new(0, 120, 0, 20)
+KnockbackLabel.Font = Enum.Font.Gotham
+KnockbackLabel.Text = "Super Knockback:"
+KnockbackLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+KnockbackLabel.TextSize = 13
+KnockbackLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Anti Hit Button
-AntiHitButton.Name = "AntiHitButton"
-AntiHitButton.Parent = ContentFrame
-AntiHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-AntiHitButton.BorderSizePixel = 0
-AntiHitButton.Position = UDim2.new(0, 15, 0, 148)
-AntiHitButton.Size = UDim2.new(0, 70, 0, 28)
-AntiHitButton.Font = Enum.Font.Gotham
-AntiHitButton.Text = "OFF"
-AntiHitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AntiHitButton.TextSize = 13
+-- Knockback Button
+KnockbackButton.Name = "KnockbackButton"
+KnockbackButton.Parent = ContentFrame
+KnockbackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+KnockbackButton.BorderSizePixel = 0
+KnockbackButton.Position = UDim2.new(0, 15, 0, 148)
+KnockbackButton.Size = UDim2.new(0, 70, 0, 28)
+KnockbackButton.Font = Enum.Font.Gotham
+KnockbackButton.Text = "OFF"
+KnockbackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KnockbackButton.TextSize = 13
 
-local AntiHitCorner = Instance.new("UICorner")
-AntiHitCorner.CornerRadius = UDim.new(0, 5)
-AntiHitCorner.Parent = AntiHitButton
+local KnockCorner = Instance.new("UICorner")
+KnockCorner.CornerRadius = UDim.new(0, 5)
+KnockCorner.Parent = KnockbackButton
 
--- One Hit Label
-OneHitLabel.Name = "OneHitLabel"
-OneHitLabel.Parent = ContentFrame
-OneHitLabel.BackgroundTransparency = 1
-OneHitLabel.Position = UDim2.new(0, 15, 0, 184)
-OneHitLabel.Size = UDim2.new(0, 100, 0, 20)
-OneHitLabel.Font = Enum.Font.Gotham
-OneHitLabel.Text = "One Hit Kill:"
-OneHitLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-OneHitLabel.TextSize = 13
-OneHitLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- Knockback Display
+KnockbackDisplay.Name = "KnockbackDisplay"
+KnockbackDisplay.Parent = ContentFrame
+KnockbackDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+KnockbackDisplay.BorderSizePixel = 0
+KnockbackDisplay.Position = UDim2.new(0, 165, 0, 148)
+KnockbackDisplay.Size = UDim2.new(0, 35, 0, 28)
+KnockbackDisplay.Font = Enum.Font.Gotham
+KnockbackDisplay.Text = tostring(knockbackPower)
+KnockbackDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+KnockbackDisplay.TextSize = 13
 
--- One Hit Button
-OneHitButton.Name = "OneHitButton"
-OneHitButton.Parent = ContentFrame
-OneHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-OneHitButton.BorderSizePixel = 0
-OneHitButton.Position = UDim2.new(0, 15, 0, 206)
-OneHitButton.Size = UDim2.new(0, 70, 0, 28)
-OneHitButton.Font = Enum.Font.Gotham
-OneHitButton.Text = "OFF"
-OneHitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OneHitButton.TextSize = 13
+local KnockDisplayCorner = Instance.new("UICorner")
+KnockDisplayCorner.CornerRadius = UDim.new(0, 5)
+KnockDisplayCorner.Parent = KnockbackDisplay
 
-local OneHitCorner = Instance.new("UICorner")
-OneHitCorner.CornerRadius = UDim.new(0, 5)
-OneHitCorner.Parent = OneHitButton
+-- Knockback Minus Button
+KnockbackMinusButton.Name = "KnockbackMinusButton"
+KnockbackMinusButton.Parent = ContentFrame
+KnockbackMinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+KnockbackMinusButton.BorderSizePixel = 0
+KnockbackMinusButton.Position = UDim2.new(0, 205, 0, 148)
+KnockbackMinusButton.Size = UDim2.new(0, 28, 0, 28)
+KnockbackMinusButton.Font = Enum.Font.Gotham
+KnockbackMinusButton.Text = "-"
+KnockbackMinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KnockbackMinusButton.TextSize = 16
+
+local KnockMinusCorner = Instance.new("UICorner")
+KnockMinusCorner.CornerRadius = UDim.new(0, 5)
+KnockMinusCorner.Parent = KnockbackMinusButton
+
+-- Knockback Plus Button
+KnockbackPlusButton.Name = "KnockbackPlusButton"
+KnockbackPlusButton.Parent = ContentFrame
+KnockbackPlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+KnockbackPlusButton.BorderSizePixel = 0
+KnockbackPlusButton.Position = UDim2.new(0, 237, 0, 148)
+KnockbackPlusButton.Size = UDim2.new(0, 28, 0, 28)
+KnockbackPlusButton.Font = Enum.Font.Gotham
+KnockbackPlusButton.Text = "+"
+KnockbackPlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KnockbackPlusButton.TextSize = 16
+
+local KnockPlusCorner = Instance.new("UICorner")
+KnockPlusCorner.CornerRadius = UDim.new(0, 5)
+KnockPlusCorner.Parent = KnockbackPlusButton
 
 -- Warning Label
 WarningLabel.Name = "WarningLabel"
-WarningLabel.Parent = MainFrame
+WarningLabel.Parent = ContentFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 15, 1, -25)
+WarningLabel.Position = UDim2.new(0, 15, 0, 185)
 WarningLabel.Size = UDim2.new(1, -30, 0, 18)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
@@ -287,9 +301,9 @@ MinimizedButton.BorderSizePixel = 0
 MinimizedButton.Position = UDim2.new(0.5, -60, 0, 10)
 MinimizedButton.Size = UDim2.new(0, 120, 0, 40)
 MinimizedButton.Font = Enum.Font.Gotham
-MinimizedButton.Text = "Ability Hub"
+MinimizedButton.Text = "Ability"
 MinimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizedButton.TextSize = 14
+MinimizedButton.TextSize = 16
 MinimizedButton.Visible = false
 MinimizedButton.Active = true
 MinimizedButton.Draggable = true
@@ -315,6 +329,10 @@ local function updateSpeed()
     SpeedDisplay.Text = tostring(currentSpeed)
 end
 
+local function updateKnockback()
+    KnockbackDisplay.Text = tostring(knockbackPower)
+end
+
 local function showWarning(message)
     WarningLabel.Text = message
     WarningLabel.Visible = true
@@ -333,97 +351,79 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Anti Hit System (Mencegah damage dan knockback)
-local function setupAntiHit(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    local rootPart = character:WaitForChild("HumanoidRootPart")
+-- Super Knockback System
+local function applyKnockback(targetCharacter)
+    if not superKnockbackEnabled then return end
+    if not targetCharacter then return end
     
-    -- Simpan health asli
-    originalHealth = humanoid.Health
-    originalMaxHealth = humanoid.MaxHealth
+    local targetHumanoid = targetCharacter:FindFirstChild("Humanoid")
+    local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+    local myCharacter = player.Character
     
-    -- Monitor health changes
-    humanoid.HealthChanged:Connect(function(health)
-        if antiHitEnabled and health < originalHealth then
-            humanoid.Health = originalMaxHealth
-        end
-        originalHealth = humanoid.Health
-    end)
-    
-    -- Prevent knockback dengan anchoring sementara
-    RunService.Heartbeat:Connect(function()
-        if antiHitEnabled then
-            humanoid.Health = originalMaxHealth
+    if targetHumanoid and targetRootPart and myCharacter then
+        local myRootPart = myCharacter:FindFirstChild("HumanoidRootPart")
+        if myRootPart then
+            -- Calculate direction from player to target
+            local direction = (targetRootPart.Position - myRootPart.Position).Unit
             
-            -- Disable knockback dengan mencegah velocity changes
-            if rootPart and rootPart:IsA("BasePart") then
-                local currentVelocity = rootPart.AssemblyLinearVelocity
-                -- Hanya reset velocity Y jika terlalu besar (knockback detection)
-                if math.abs(currentVelocity.Y) > 50 or currentVelocity.Magnitude > 100 then
-                    rootPart.AssemblyLinearVelocity = Vector3.new(currentVelocity.X * 0.5, 0, currentVelocity.Z * 0.5)
-                end
-            end
-        end
-    end)
-    
-    -- Hapus semua damage scripts yang ada
-    for _, descendant in pairs(character:GetDescendants()) do
-        if descendant:IsA("Script") or descendant:IsA("LocalScript") then
-            if descendant.Name:lower():find("damage") or descendant.Name:lower():find("hurt") then
-                if antiHitEnabled then
-                    descendant.Disabled = true
-                end
-            end
+            -- Apply knockback force
+            local bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
+            bodyVelocity.Velocity = direction * (knockbackPower * 10) + Vector3.new(0, knockbackPower * 5, 0)
+            bodyVelocity.Parent = targetRootPart
+            
+            game:GetService("Debris"):AddItem(bodyVelocity, 0.15)
         end
     end
 end
--- One Hit Kill System (Benar-benar membunuh musuh)
-local function setupOneHit(character)
-    local function onHit(hit)
-        if not oneHitEnabled then return end
-        
-        local enemyCharacter = hit.Parent
-        if enemyCharacter and enemyCharacter ~= character then
-            local enemyHumanoid = enemyCharacter:FindFirstChild("Humanoid")
-            local enemyPlayer = game.Players:GetPlayerFromCharacter(enemyCharacter)
-            
-            -- Pastikan ini adalah musuh (player lain atau NPC)
-            if enemyHumanoid and enemyHumanoid.Health > 0 then
-                -- Kill secara langsung
-                enemyHumanoid.Health = 0
-                enemyHumanoid:TakeDamage(enemyHumanoid.MaxHealth)
-                
-                -- Fallback: break joints jika masih hidup
-                spawn(function()
-                    wait(0.1)
-                    if enemyHumanoid.Health > 0 then
-                        enemyHumanoid:ChangeState(Enum.HumanoidStateType.Dead)
-                        if enemyCharacter:FindFirstChild("Head") then
-                            enemyCharacter.Head:Destroy()
+
+-- Monitor for punches/hits
+player.CharacterAdded:Connect(function(character)
+    character.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("Tool") then
+            descendant.Activated:Connect(function()
+                if superKnockbackEnabled then
+                    -- Wait a tiny bit for hit detection
+                    wait(0.05)
+                    
+                    -- Find nearby players
+                    local myRootPart = character:FindFirstChild("HumanoidRootPart")
+                    if myRootPart then
+                        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+                            if otherPlayer ~= player and otherPlayer.Character then
+                                local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                                if targetRoot then
+                                    local distance = (myRootPart.Position - targetRoot.Position).Magnitude
+                                    if distance <= 10 then
+                                        applyKnockback(otherPlayer.Character)
+                                    end
+                                end
+                            end
                         end
                     end
-                end)
-            end
-        end
-    end
-    
-    -- Monitor semua part di character untuk collision
-    for _, part in pairs(character:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            part.Touched:Connect(onHit)
-        end
-    end
-    
-    -- Monitor tools
-    character.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then
-            for _, part in pairs(child:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Touched:Connect(onHit)
                 end
-            end
+            end)
         end
     end)
+end)
+
+-- Alternative: Monitor touched events for punches
+if player.Character then
+    for _, part in pairs(player.Character:GetChildren()) do
+        if part:IsA("BasePart") and (part.Name == "Left Arm" or part.Name == "Right Arm" or part.Name == "LeftHand" or part.Name == "RightHand") then
+            part.Touched:Connect(function(hit)
+                if superKnockbackEnabled then
+                    local targetCharacter = hit.Parent
+                    if targetCharacter and targetCharacter:FindFirstChild("Humanoid") then
+                        local targetPlayer = game.Players:GetPlayerFromCharacter(targetCharacter)
+                        if targetPlayer and targetPlayer ~= player then
+                            applyKnockback(targetCharacter)
+                        end
+                    end
+                end
+            end)
+        end
+    end
 end
 
 -- Button Functions
@@ -443,6 +443,22 @@ MinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
+KnockbackPlusButton.MouseButton1Click:Connect(function()
+    if knockbackPower < 50 then
+        knockbackPower = knockbackPower + 1
+        updateKnockback()
+    else
+        showWarning("Cannot be more than 50")
+    end
+end)
+
+KnockbackMinusButton.MouseButton1Click:Connect(function()
+    if knockbackPower > 1 then
+        knockbackPower = knockbackPower - 1
+        updateKnockback()
+    end
+end)
+
 InfiniteJumpButton.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
     if infiniteJumpEnabled then
@@ -454,39 +470,14 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
-AntiHitButton.MouseButton1Click:Connect(function()
-    antiHitEnabled = not antiHitEnabled
-    if antiHitEnabled then
-        AntiHitButton.Text = "ON"
-        AntiHitButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-        showWarning("Anti Hit Enabled!")
-        
-        -- Set max health saat enable
-        local character = player.Character
-        if character then
-            local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid then
-                humanoid.Health = humanoid.MaxHealth
-                originalMaxHealth = humanoid.MaxHealth
-            end
-        end
+KnockbackButton.MouseButton1Click:Connect(function()
+    superKnockbackEnabled = not superKnockbackEnabled
+    if superKnockbackEnabled then
+        KnockbackButton.Text = "ON"
+        KnockbackButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
     else
-        AntiHitButton.Text = "OFF"
-        AntiHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-        showWarning("Anti Hit Disabled")
-    end
-end)
-
-OneHitButton.MouseButton1Click:Connect(function()
-    oneHitEnabled = not oneHitEnabled
-    if oneHitEnabled then
-        OneHitButton.Text = "ON"
-        OneHitButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-        showWarning("One Hit Kill Enabled!")
-    else
-        OneHitButton.Text = "OFF"
-        OneHitButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-        showWarning("One Hit Kill Disabled")
+        KnockbackButton.Text = "OFF"
+        KnockbackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
 end)
 
@@ -519,23 +510,33 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Character Reset Handler
+-- Character Reset Handler (Tetap Apply Settings)
 player.CharacterAdded:Connect(function(character)
     local humanoid = character:WaitForChild("Humanoid")
     wait(0.1)
     humanoid.WalkSpeed = currentSpeed
     
-    -- Setup systems untuk character baru
-    setupAntiHit(character)
-    setupOneHit(character)
+    -- Re-attach touch events for knockback
+    wait(0.5)
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") and (part.Name == "Left Arm" or part.Name == "Right Arm" or part.Name == "LeftHand" or part.Name == "RightHand") then
+            part.Touched:Connect(function(hit)
+                if superKnockbackEnabled then
+                    local targetCharacter = hit.Parent
+                    if targetCharacter and targetCharacter:FindFirstChild("Humanoid") then
+                        local targetPlayer = game.Players:GetPlayerFromCharacter(targetCharacter)
+                        if targetPlayer and targetPlayer ~= player then
+                            applyKnockback(targetCharacter)
+                        end
+                    end
+                end
+            end)
+        end
+    end
 end)
 
 -- Initial Setup
-if player.Character then
-    setupAntiHit(player.Character)
-    setupOneHit(player.Character)
-end
-
 updateSpeed()
+updateKnockback()
 print("Ability GUI Loaded Successfully!")
-print("Features: Walkspeed, Infinite Jump, Anti Hit, One Hit Kill")
+print("Super Knockback Feature Added!")
