@@ -6,12 +6,13 @@ local RunService = game:GetService("RunService")
 local currentSpeed = 16
 local currentJumpHeight = 7.2
 local infiniteJumpEnabled = false
-local invisibilityEnabled = false
+local fastAttackEnabled = false
+local attackSpeed = 0.1 -- Default attack delay (lower = faster)
 local isMinimized = false
 local currentCategory = "Movement"
 local guiActive = true
 local heartbeatConnection = nil
-local originalTransparency = {}
+local attackConnection = nil
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -21,21 +22,36 @@ local TitleLabel = Instance.new("TextLabel")
 local MinimizeButton = Instance.new("TextButton")
 local ExitButton = Instance.new("TextButton")
 local ContentFrame = Instance.new("Frame")
+
+-- Left Side (Category Menu) - SCROLLABLE
 local LeftFrame = Instance.new("ScrollingFrame")
 local MovementButton = Instance.new("TextButton")
+local CombatButton = Instance.new("TextButton")
+
+-- Right Side (Content Area)
 local RightFrame = Instance.new("ScrollingFrame")
 local WalkspeedLabel = Instance.new("TextLabel")
 local SpeedDisplay = Instance.new("TextLabel")
 local MinusButton = Instance.new("TextButton")
 local PlusButton = Instance.new("TextButton")
+
+-- Jump Height Elements
 local JumpHeightLabel = Instance.new("TextLabel")
 local JumpHeightDisplay = Instance.new("TextLabel")
 local JumpMinusButton = Instance.new("TextButton")
 local JumpPlusButton = Instance.new("TextButton")
+
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
-local InvisibilityLabel = Instance.new("TextLabel")
-local InvisibilityButton = Instance.new("TextButton")
+
+-- Fast Attack Elements
+local FastAttackLabel = Instance.new("TextLabel")
+local FastAttackButton = Instance.new("TextButton")
+local AttackSpeedLabel = Instance.new("TextLabel")
+local AttackSpeedDisplay = Instance.new("TextLabel")
+local AttackMinusButton = Instance.new("TextButton")
+local AttackPlusButton = Instance.new("TextButton")
+
 local WarningLabel = Instance.new("TextLabel")
 local MinimizedButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
@@ -122,7 +138,7 @@ ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 0, 0, 32)
 ContentFrame.Size = UDim2.new(1, 0, 1, -32)
 
--- LEFT FRAME
+-- LEFT FRAME (Category Menu) - SCROLLABLE
 LeftFrame.Name = "LeftFrame"
 LeftFrame.Parent = ContentFrame
 LeftFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -137,6 +153,7 @@ local LeftCorner = Instance.new("UICorner")
 LeftCorner.CornerRadius = UDim.new(0, 8)
 LeftCorner.Parent = LeftFrame
 
+-- UIListLayout for automatic positioning
 local LeftListLayout = Instance.new("UIListLayout")
 LeftListLayout.Parent = LeftFrame
 LeftListLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -150,7 +167,7 @@ LeftPadding.PaddingBottom = UDim.new(0, 6)
 LeftPadding.PaddingLeft = UDim.new(0, 7)
 LeftPadding.PaddingRight = UDim.new(0, 7)
 
--- Movement Button
+-- Movement Category Button
 MovementButton.Name = "MovementButton"
 MovementButton.Parent = LeftFrame
 MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
@@ -166,11 +183,28 @@ local MovementCorner = Instance.new("UICorner")
 MovementCorner.CornerRadius = UDim.new(0, 5)
 MovementCorner.Parent = MovementButton
 
+-- Combat Category Button
+CombatButton.Name = "CombatButton"
+CombatButton.Parent = LeftFrame
+CombatButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
+CombatButton.BorderSizePixel = 0
+CombatButton.Size = UDim2.new(1, -14, 0, 28)
+CombatButton.Font = Enum.Font.GothamBold
+CombatButton.Text = "Combat"
+CombatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CombatButton.TextSize = 10
+CombatButton.LayoutOrder = 2
+
+local CombatCorner = Instance.new("UICorner")
+CombatCorner.CornerRadius = UDim.new(0, 5)
+CombatCorner.Parent = CombatButton
+
+-- Auto-update CanvasSize for LeftFrame
 LeftListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     LeftFrame.CanvasSize = UDim2.new(0, 0, 0, LeftListLayout.AbsoluteContentSize.Y + 12)
 end)
 
--- RIGHT FRAME
+-- RIGHT FRAME (Content Area)
 RightFrame.Name = "RightFrame"
 RightFrame.Parent = ContentFrame
 RightFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -213,7 +247,7 @@ local SpeedCorner = Instance.new("UICorner")
 SpeedCorner.CornerRadius = UDim.new(0, 5)
 SpeedCorner.Parent = SpeedDisplay
 
--- Minus Button
+-- Minus Button (Walkspeed)
 MinusButton.Name = "MinusButton"
 MinusButton.Parent = RightFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
@@ -229,7 +263,7 @@ local MinusCorner = Instance.new("UICorner")
 MinusCorner.CornerRadius = UDim.new(0, 5)
 MinusCorner.Parent = MinusButton
 
--- Plus Button
+-- Plus Button (Walkspeed)
 PlusButton.Name = "PlusButton"
 PlusButton.Parent = RightFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
@@ -333,39 +367,106 @@ local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 5)
 JumpCorner.Parent = InfiniteJumpButton
 
--- Invisibility Label
-InvisibilityLabel.Name = "InvisibilityLabel"
-InvisibilityLabel.Parent = RightFrame
-InvisibilityLabel.BackgroundTransparency = 1
-InvisibilityLabel.Position = UDim2.new(0, 10, 0, 170)
-InvisibilityLabel.Size = UDim2.new(0, 100, 0, 18)
-InvisibilityLabel.Font = Enum.Font.Gotham
-InvisibilityLabel.Text = "Invisibility:"
-InvisibilityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-InvisibilityLabel.TextSize = 12
-InvisibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- ========== FAST ATTACK ELEMENTS ==========
+-- Fast Attack Label
+FastAttackLabel.Name = "FastAttackLabel"
+FastAttackLabel.Parent = RightFrame
+FastAttackLabel.BackgroundTransparency = 1
+FastAttackLabel.Position = UDim2.new(0, 10, 0, 8)
+FastAttackLabel.Size = UDim2.new(0, 100, 0, 18)
+FastAttackLabel.Font = Enum.Font.Gotham
+FastAttackLabel.Text = "Fast Attack:"
+FastAttackLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+FastAttackLabel.TextSize = 12
+FastAttackLabel.TextXAlignment = Enum.TextXAlignment.Left
+FastAttackLabel.Visible = false
 
--- Invisibility Button
-InvisibilityButton.Name = "InvisibilityButton"
-InvisibilityButton.Parent = RightFrame
-InvisibilityButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-InvisibilityButton.BorderSizePixel = 0
-InvisibilityButton.Position = UDim2.new(0, 10, 0, 190)
-InvisibilityButton.Size = UDim2.new(0, 55, 0, 26)
-InvisibilityButton.Font = Enum.Font.Gotham
-InvisibilityButton.Text = "OFF"
-InvisibilityButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-InvisibilityButton.TextSize = 12
+-- Fast Attack Button
+FastAttackButton.Name = "FastAttackButton"
+FastAttackButton.Parent = RightFrame
+FastAttackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+FastAttackButton.BorderSizePixel = 0
+FastAttackButton.Position = UDim2.new(0, 10, 0, 28)
+FastAttackButton.Size = UDim2.new(0, 55, 0, 26)
+FastAttackButton.Font = Enum.Font.Gotham
+FastAttackButton.Text = "OFF"
+FastAttackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FastAttackButton.TextSize = 12
+FastAttackButton.Visible = false
 
-local InvisCorner = Instance.new("UICorner")
-InvisCorner.CornerRadius = UDim.new(0, 5)
-InvisCorner.Parent = InvisibilityButton
+local FastAttackCorner = Instance.new("UICorner")
+FastAttackCorner.CornerRadius = UDim.new(0, 5)
+FastAttackCorner.Parent = FastAttackButton
+
+-- Attack Speed Label
+AttackSpeedLabel.Name = "AttackSpeedLabel"
+AttackSpeedLabel.Parent = RightFrame
+AttackSpeedLabel.BackgroundTransparency = 1
+AttackSpeedLabel.Position = UDim2.new(0, 10, 0, 62)
+AttackSpeedLabel.Size = UDim2.new(0, 100, 0, 18)
+AttackSpeedLabel.Font = Enum.Font.Gotham
+AttackSpeedLabel.Text = "Attack Speed:"
+AttackSpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+AttackSpeedLabel.TextSize = 12
+AttackSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+AttackSpeedLabel.Visible = false
+
+-- Attack Speed Display
+AttackSpeedDisplay.Name = "AttackSpeedDisplay"
+AttackSpeedDisplay.Parent = RightFrame
+AttackSpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+AttackSpeedDisplay.BorderSizePixel = 0
+AttackSpeedDisplay.Position = UDim2.new(0, 10, 0, 82)
+AttackSpeedDisplay.Size = UDim2.new(0, 50, 0, 26)
+AttackSpeedDisplay.Font = Enum.Font.Gotham
+AttackSpeedDisplay.Text = tostring(attackSpeed)
+AttackSpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+AttackSpeedDisplay.TextSize = 14
+AttackSpeedDisplay.Visible = false
+
+local AttackSpeedCorner = Instance.new("UICorner")
+AttackSpeedCorner.CornerRadius = UDim.new(0, 5)
+AttackSpeedCorner.Parent = AttackSpeedDisplay
+
+-- Attack Minus Button
+AttackMinusButton.Name = "AttackMinusButton"
+AttackMinusButton.Parent = RightFrame
+AttackMinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+AttackMinusButton.BorderSizePixel = 0
+AttackMinusButton.Position = UDim2.new(0, 65, 0, 82)
+AttackMinusButton.Size = UDim2.new(0, 28, 0, 26)
+AttackMinusButton.Font = Enum.Font.GothamBold
+AttackMinusButton.Text = "-"
+AttackMinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AttackMinusButton.TextSize = 18
+AttackMinusButton.Visible = false
+
+local AttackMinusCorner = Instance.new("UICorner")
+AttackMinusCorner.CornerRadius = UDim.new(0, 5)
+AttackMinusCorner.Parent = AttackMinusButton
+
+-- Attack Plus Button
+AttackPlusButton.Name = "AttackPlusButton"
+AttackPlusButton.Parent = RightFrame
+AttackPlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+AttackPlusButton.BorderSizePixel = 0
+AttackPlusButton.Position = UDim2.new(0, 98, 0, 82)
+AttackPlusButton.Size = UDim2.new(0, 28, 0, 26)
+AttackPlusButton.Font = Enum.Font.GothamBold
+AttackPlusButton.Text = "+"
+AttackPlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AttackPlusButton.TextSize = 18
+AttackPlusButton.Visible = false
+
+local AttackPlusCorner = Instance.new("UICorner")
+AttackPlusCorner.CornerRadius = UDim.new(0, 5)
+AttackPlusCorner.Parent = AttackPlusButton
 
 -- Warning Label
 WarningLabel.Name = "WarningLabel"
 WarningLabel.Parent = RightFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 10, 0, 224)
+WarningLabel.Position = UDim2.new(0, 10, 0, 220)
 WarningLabel.Size = UDim2.new(1, -20, 0, 16)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
@@ -373,7 +474,7 @@ WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 WarningLabel.TextSize = 10
 WarningLabel.Visible = false
 
--- Minimized Button
+-- Minimized Button (RGB Border)
 MinimizedButton.Name = "MinimizedButton"
 MinimizedButton.Parent = ScreenGui
 MinimizedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -413,6 +514,10 @@ local function updateJumpHeight()
     JumpHeightDisplay.Text = tostring(currentJumpHeight)
 end
 
+local function updateAttackSpeed()
+    AttackSpeedDisplay.Text = tostring(attackSpeed)
+end
+
 local function showWarning(message)
     WarningLabel.Text = message
     WarningLabel.Visible = true
@@ -420,99 +525,33 @@ local function showWarning(message)
     WarningLabel.Visible = false
 end
 
-local function setInvisibility(enabled)
-    local character = player.Character
-    if not character then return end
-    
-    if enabled then
-        -- Make all parts invisible
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                originalTransparency[part] = part.Transparency
-                part.Transparency = 1
-                -- Disable CanCollide for complete invisibility
-                if part.Name ~= "HumanoidRootPart" then
-                    part.CanCollide = false
-                end
-            elseif part:IsA("Decal") or part:IsA("Texture") then
-                originalTransparency[part] = part.Transparency
-                part.Transparency = 1
-            elseif part:IsA("Accessory") then
-                local handle = part:FindFirstChild("Handle")
-                if handle then
-                    originalTransparency[handle] = handle.Transparency
-                    handle.Transparency = 1
-                    handle.CanCollide = false
-                end
-            elseif part:IsA("ParticleEmitter") or part:IsA("Fire") or part:IsA("Smoke") or part:IsA("Sparkles") then
-                originalTransparency[part] = part.Enabled
-                part.Enabled = false
-            end
-        end
-        
-        -- Hide face
-        local head = character:FindFirstChild("Head")
-        if head then
-            local face = head:FindFirstChild("face")
-            if face then
-                originalTransparency[face] = face.Transparency
-                face.Transparency = 1
-            end
-            
-            -- Hide nametag by destroying or hiding GUI elements
-            for _, gui in pairs(head:GetChildren()) do
-                if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
-                    originalTransparency[gui] = gui.Enabled
-                    gui.Enabled = false
-                end
-            end
-        end
-        
-        -- Hide nameplate/overhead display (method 1)
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            originalTransparency[humanoid] = humanoid.DisplayDistanceType
-            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-        end
-        
-        -- Hide nameplate (method 2 - for games with custom nametags)
-        for _, obj in pairs(character:GetDescendants()) do
-            if obj:IsA("BillboardGui") and (obj.Name:lower():find("name") or obj.Name:lower():find("tag") or obj.Name:lower():find("health")) then
-                originalTransparency[obj] = obj.Enabled
-                obj.Enabled = false
-            end
-        end
-        
-        print("Invisibility: ON - Completely invisible with hidden nametag!")
-    else
-        -- Restore all original properties
-        for part, value in pairs(originalTransparency) do
-            if part and part.Parent then
-                if part:IsA("BasePart") then
-                    part.Transparency = value
-                    if part.Name ~= "HumanoidRootPart" then
-                        part.CanCollide = true
-                    end
-                elseif part:IsA("Decal") or part:IsA("Texture") then
-                    part.Transparency = value
-                elseif part:IsA("ParticleEmitter") or part:IsA("Fire") or part:IsA("Smoke") or part:IsA("Sparkles") then
-                    part.Enabled = value
-                elseif part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
-                    part.Enabled = value
-                elseif part:IsA("Humanoid") then
-                    part.DisplayDistanceType = value
-                end
-            end
-        end
-        originalTransparency = {}
-        print("Invisibility: OFF - You are now visible with nametag!")
-    end
-end
-
 local function switchCategory(category)
     currentCategory = category
-    MovementButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
     
+    -- Reset all button colors
+    MovementButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
+    CombatButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
+    
+    -- Hide all content
+    WalkspeedLabel.Visible = false
+    SpeedDisplay.Visible = false
+    MinusButton.Visible = false
+    PlusButton.Visible = false
+    JumpHeightLabel.Visible = false
+    JumpHeightDisplay.Visible = false
+    JumpMinusButton.Visible = false
+    JumpPlusButton.Visible = false
+    InfiniteJumpLabel.Visible = false
+    InfiniteJumpButton.Visible = false
+    
+    FastAttackLabel.Visible = false
+    FastAttackButton.Visible = false
+    AttackSpeedLabel.Visible = false
+    AttackSpeedDisplay.Visible = false
+    AttackMinusButton.Visible = false
+    AttackPlusButton.Visible = false
+    
+    -- Show selected category
     if category == "Movement" then
         MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
         WalkspeedLabel.Visible = true
@@ -525,14 +564,42 @@ local function switchCategory(category)
         JumpPlusButton.Visible = true
         InfiniteJumpLabel.Visible = true
         InfiniteJumpButton.Visible = true
-        InvisibilityLabel.Visible = true
-        InvisibilityButton.Visible = true
+    elseif category == "Combat" then
+        CombatButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        FastAttackLabel.Visible = true
+        FastAttackButton.Visible = true
+        AttackSpeedLabel.Visible = true
+        AttackSpeedDisplay.Visible = true
+        AttackMinusButton.Visible = true
+        AttackPlusButton.Visible = true
     end
 end
 
+-- Fast Attack Function
+local function startFastAttack()
+    if attackConnection then
+        attackConnection:Disconnect()
+    end
+    
+    attackConnection = RunService.Heartbeat:Connect(function()
+        if fastAttackEnabled and guiActive then
+            local character = player.Character
+            if character then
+                local tool = character:FindFirstChildOfClass("Tool")
+                if tool and tool:FindFirstChild("Handle") then
+                    -- Try to activate the tool
+                    tool:Activate()
+                    wait(attackSpeed)
+                end
+            end
+        end
+    end)
+end
+-- Reset all abilities to default
 local function resetAllAbilities()
     guiActive = false
     
+    -- Reset walkspeed to default
     local character = player.Character
     if character then
         local humanoid = character:FindFirstChild("Humanoid")
@@ -542,21 +609,25 @@ local function resetAllAbilities()
         end
     end
     
+    -- Disable infinite jump and fast attack
     infiniteJumpEnabled = false
+    fastAttackEnabled = false
     
-    if invisibilityEnabled then
-        setInvisibility(false)
-        invisibilityEnabled = false
-    end
-    
+    -- Disconnect all connections
     if heartbeatConnection then
         heartbeatConnection:Disconnect()
         heartbeatConnection = nil
     end
     
+    if attackConnection then
+        attackConnection:Disconnect()
+        attackConnection = nil
+    end
+    
     print("All abilities disabled!")
 end
 
+-- Auto Apply Walkspeed & Jump Height
 heartbeatConnection = RunService.Heartbeat:Connect(function()
     if guiActive then
         local character = player.Character
@@ -574,10 +645,16 @@ heartbeatConnection = RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- Button Functions
 MovementButton.MouseButton1Click:Connect(function()
     switchCategory("Movement")
 end)
 
+CombatButton.MouseButton1Click:Connect(function()
+    switchCategory("Combat")
+end)
+
+-- Walkspeed Buttons
 PlusButton.MouseButton1Click:Connect(function()
     if currentSpeed < 100 then
         currentSpeed = currentSpeed + 1
@@ -594,6 +671,7 @@ MinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Jump Height Buttons
 JumpPlusButton.MouseButton1Click:Connect(function()
     if currentJumpHeight < 50 then
         currentJumpHeight = math.floor((currentJumpHeight + 0.5) * 10 + 0.5) / 10
@@ -610,6 +688,7 @@ JumpMinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Infinite Jump Button
 InfiniteJumpButton.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
     if infiniteJumpEnabled then
@@ -621,19 +700,51 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
-InvisibilityButton.MouseButton1Click:Connect(function()
-    invisibilityEnabled = not invisibilityEnabled
-    setInvisibility(invisibilityEnabled)
-    
-    if invisibilityEnabled then
-        InvisibilityButton.Text = "ON"
-        InvisibilityButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+-- Fast Attack Button
+FastAttackButton.MouseButton1Click:Connect(function()
+    fastAttackEnabled = not fastAttackEnabled
+    if fastAttackEnabled then
+        FastAttackButton.Text = "ON"
+        FastAttackButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        startFastAttack()
+        print("Fast Attack Enabled!")
     else
-        InvisibilityButton.Text = "OFF"
-        InvisibilityButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+        FastAttackButton.Text = "OFF"
+        FastAttackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+        if attackConnection then
+            attackConnection:Disconnect()
+            attackConnection = nil
+        end
+        print("Fast Attack Disabled!")
     end
 end)
 
+-- Attack Speed Buttons
+AttackPlusButton.MouseButton1Click:Connect(function()
+    if attackSpeed < 1 then
+        attackSpeed = math.floor((attackSpeed + 0.05) * 100 + 0.5) / 100
+        updateAttackSpeed()
+        if fastAttackEnabled then
+            startFastAttack()
+        end
+    else
+        showWarning("Attack Speed cannot be more than 1.0")
+    end
+end)
+
+AttackMinusButton.MouseButton1Click:Connect(function()
+    if attackSpeed > 0.01 then
+        attackSpeed = math.floor((attackSpeed - 0.05) * 100 + 0.5) / 100
+        updateAttackSpeed()
+        if fastAttackEnabled then
+            startFastAttack()
+        end
+    else
+        showWarning("Attack Speed cannot be less than 0.01")
+    end
+end)
+
+-- Minimize Button
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     MainFrame.Visible = not isMinimized
@@ -648,12 +759,14 @@ MinimizedButton.MouseButton1Click:Connect(function()
     print("GUI Restored!")
 end)
 
+-- Exit Button
 ExitButton.MouseButton1Click:Connect(function()
     resetAllAbilities()
     ScreenGui:Destroy()
     print("GUI Closed - All features disabled!")
 end)
 
+-- Infinite Jump Logic
 UserInputService.JumpRequest:Connect(function()
     if guiActive and infiniteJumpEnabled then
         local character = player.Character
@@ -666,6 +779,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+-- Character Reset Handler
 player.CharacterAdded:Connect(function(character)
     if guiActive then
         local humanoid = character:WaitForChild("Humanoid")
@@ -673,9 +787,9 @@ player.CharacterAdded:Connect(function(character)
         humanoid.WalkSpeed = currentSpeed
         humanoid.JumpHeight = currentJumpHeight
         
-        if invisibilityEnabled then
-            wait(0.2)
-            setInvisibility(true)
+        -- Restart fast attack if enabled
+        if fastAttackEnabled then
+            startFastAttack()
         end
     else
         local humanoid = character:WaitForChild("Humanoid")
