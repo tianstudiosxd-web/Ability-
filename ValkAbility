@@ -6,13 +6,18 @@ local RunService = game:GetService("RunService")
 local currentSpeed = 16
 local currentJumpHeight = 7.2
 local infiniteJumpEnabled = false
-local fastAttackEnabled = false
-local attackSpeed = 0.1 -- Default attack delay (lower = faster)
 local isMinimized = false
 local currentCategory = "Movement"
 local guiActive = true
 local heartbeatConnection = nil
-local attackConnection = nil
+
+-- Fly Variables
+local flyEnabled = false
+local ctrl = {f = 0, b = 0, l = 0, r = 0}
+local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+local maxspeed = 50
+local speed = 0
+local bg, bv
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -22,47 +27,34 @@ local TitleLabel = Instance.new("TextLabel")
 local MinimizeButton = Instance.new("TextButton")
 local ExitButton = Instance.new("TextButton")
 local ContentFrame = Instance.new("Frame")
-
--- Left Side (Category Menu) - SCROLLABLE
 local LeftFrame = Instance.new("ScrollingFrame")
 local MovementButton = Instance.new("TextButton")
-local CombatButton = Instance.new("TextButton")
-
--- Right Side (Content Area)
+local AbilityButton = Instance.new("TextButton")
 local RightFrame = Instance.new("ScrollingFrame")
 local WalkspeedLabel = Instance.new("TextLabel")
 local SpeedDisplay = Instance.new("TextLabel")
 local MinusButton = Instance.new("TextButton")
 local PlusButton = Instance.new("TextButton")
-
--- Jump Height Elements
 local JumpHeightLabel = Instance.new("TextLabel")
 local JumpHeightDisplay = Instance.new("TextLabel")
 local JumpMinusButton = Instance.new("TextButton")
 local JumpPlusButton = Instance.new("TextButton")
-
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
-
--- Fast Attack Elements
-local FastAttackLabel = Instance.new("TextLabel")
-local FastAttackButton = Instance.new("TextButton")
-local AttackSpeedLabel = Instance.new("TextLabel")
-local AttackSpeedDisplay = Instance.new("TextLabel")
-local AttackMinusButton = Instance.new("TextButton")
-local AttackPlusButton = Instance.new("TextButton")
-
 local WarningLabel = Instance.new("TextLabel")
+local FlyLabel = Instance.new("TextLabel")
+local FlyToggleButton = Instance.new("TextButton")
+local FlyControlFrame = Instance.new("Frame")
+local FlyUpButton = Instance.new("TextButton")
+local FlyDownButton = Instance.new("TextButton")
 local MinimizedButton = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
-local UIStroke = Instance.new("UIStroke")
 
--- Properties
+-- ScreenGui
 ScreenGui.Name = "AbilityGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Main Frame
+-- MainFrame
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -71,24 +63,17 @@ MainFrame.Position = UDim2.new(0.5, -140, 0.5, -110)
 MainFrame.Size = UDim2.new(0, 280, 0, 220)
 MainFrame.Active = true
 MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
-MainCorner.Parent = MainFrame
-
--- Top Bar
+-- TopBar
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 TopBar.BorderSizePixel = 0
 TopBar.Size = UDim2.new(1, 0, 0, 32)
-
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 10)
-TopCorner.Parent = TopBar
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 -- Title
-TitleLabel.Name = "Title"
 TitleLabel.Parent = TopBar
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
@@ -99,8 +84,7 @@ TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Button
-MinimizeButton.Name = "MinimizeButton"
+-- MinimizeButton
 MinimizeButton.Parent = TopBar
 MinimizeButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
 MinimizeButton.BorderSizePixel = 0
@@ -110,13 +94,9 @@ MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeButton.TextSize = 16
+Instance.new("UICorner", MinimizeButton).CornerRadius = UDim.new(0, 4)
 
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 4)
-MinCorner.Parent = MinimizeButton
-
--- Exit Button
-ExitButton.Name = "ExitButton"
+-- ExitButton
 ExitButton.Parent = TopBar
 ExitButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 ExitButton.BorderSizePixel = 0
@@ -126,49 +106,36 @@ ExitButton.Font = Enum.Font.GothamBold
 ExitButton.Text = "X"
 ExitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ExitButton.TextSize = 13
+Instance.new("UICorner", ExitButton).CornerRadius = UDim.new(0, 4)
 
-local ExitCorner = Instance.new("UICorner")
-ExitCorner.CornerRadius = UDim.new(0, 4)
-ExitCorner.Parent = ExitButton
-
--- Content Frame
-ContentFrame.Name = "ContentFrame"
+-- ContentFrame
 ContentFrame.Parent = MainFrame
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 0, 0, 32)
 ContentFrame.Size = UDim2.new(1, 0, 1, -32)
 
--- LEFT FRAME (Category Menu) - SCROLLABLE
-LeftFrame.Name = "LeftFrame"
+-- LeftFrame
 LeftFrame.Parent = ContentFrame
 LeftFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 LeftFrame.BorderSizePixel = 0
-LeftFrame.Position = UDim2.new(0, 0, 0, 0)
 LeftFrame.Size = UDim2.new(0, 85, 1, 0)
 LeftFrame.ScrollBarThickness = 3
 LeftFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 LeftFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
+Instance.new("UICorner", LeftFrame).CornerRadius = UDim.new(0, 8)
 
-local LeftCorner = Instance.new("UICorner")
-LeftCorner.CornerRadius = UDim.new(0, 8)
-LeftCorner.Parent = LeftFrame
+local LeftList = Instance.new("UIListLayout", LeftFrame)
+LeftList.SortOrder = Enum.SortOrder.LayoutOrder
+LeftList.Padding = UDim.new(0, 5)
+LeftList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- UIListLayout for automatic positioning
-local LeftListLayout = Instance.new("UIListLayout")
-LeftListLayout.Parent = LeftFrame
-LeftListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-LeftListLayout.Padding = UDim.new(0, 5)
-LeftListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local LeftPad = Instance.new("UIPadding", LeftFrame)
+LeftPad.PaddingTop = UDim.new(0, 6)
+LeftPad.PaddingBottom = UDim.new(0, 6)
+LeftPad.PaddingLeft = UDim.new(0, 7)
+LeftPad.PaddingRight = UDim.new(0, 7)
 
-local LeftPadding = Instance.new("UIPadding")
-LeftPadding.Parent = LeftFrame
-LeftPadding.PaddingTop = UDim.new(0, 6)
-LeftPadding.PaddingBottom = UDim.new(0, 6)
-LeftPadding.PaddingLeft = UDim.new(0, 7)
-LeftPadding.PaddingRight = UDim.new(0, 7)
-
--- Movement Category Button
-MovementButton.Name = "MovementButton"
+-- MovementButton
 MovementButton.Parent = LeftFrame
 MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 MovementButton.BorderSizePixel = 0
@@ -178,49 +145,36 @@ MovementButton.Text = "Movement"
 MovementButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MovementButton.TextSize = 10
 MovementButton.LayoutOrder = 1
+Instance.new("UICorner", MovementButton).CornerRadius = UDim.new(0, 5)
 
-local MovementCorner = Instance.new("UICorner")
-MovementCorner.CornerRadius = UDim.new(0, 5)
-MovementCorner.Parent = MovementButton
+-- AbilityButton
+AbilityButton.Parent = LeftFrame
+AbilityButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
+AbilityButton.BorderSizePixel = 0
+AbilityButton.Size = UDim2.new(1, -14, 0, 28)
+AbilityButton.Font = Enum.Font.GothamBold
+AbilityButton.Text = "Ability"
+AbilityButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AbilityButton.TextSize = 10
+AbilityButton.LayoutOrder = 2
+Instance.new("UICorner", AbilityButton).CornerRadius = UDim.new(0, 5)
 
--- Combat Category Button
-CombatButton.Name = "CombatButton"
-CombatButton.Parent = LeftFrame
-CombatButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
-CombatButton.BorderSizePixel = 0
-CombatButton.Size = UDim2.new(1, -14, 0, 28)
-CombatButton.Font = Enum.Font.GothamBold
-CombatButton.Text = "Combat"
-CombatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CombatButton.TextSize = 10
-CombatButton.LayoutOrder = 2
-
-local CombatCorner = Instance.new("UICorner")
-CombatCorner.CornerRadius = UDim.new(0, 5)
-CombatCorner.Parent = CombatButton
-
--- Auto-update CanvasSize for LeftFrame
-LeftListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    LeftFrame.CanvasSize = UDim2.new(0, 0, 0, LeftListLayout.AbsoluteContentSize.Y + 12)
+LeftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    LeftFrame.CanvasSize = UDim2.new(0, 0, 0, LeftList.AbsoluteContentSize.Y + 12)
 end)
 
--- RIGHT FRAME (Content Area)
-RightFrame.Name = "RightFrame"
+-- RightFrame
 RightFrame.Parent = ContentFrame
 RightFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 RightFrame.BorderSizePixel = 0
 RightFrame.Position = UDim2.new(0, 90, 0, 0)
 RightFrame.Size = UDim2.new(1, -90, 1, 0)
 RightFrame.ScrollBarThickness = 3
-RightFrame.CanvasSize = UDim2.new(0, 0, 0, 250)
+RightFrame.CanvasSize = UDim2.new(0, 0, 0, 200)
 RightFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
+Instance.new("UICorner", RightFrame).CornerRadius = UDim.new(0, 8)
 
-local RightCorner = Instance.new("UICorner")
-RightCorner.CornerRadius = UDim.new(0, 8)
-RightCorner.Parent = RightFrame
-
--- Walkspeed Label
-WalkspeedLabel.Name = "WalkspeedLabel"
+-- WalkspeedLabel
 WalkspeedLabel.Parent = RightFrame
 WalkspeedLabel.BackgroundTransparency = 1
 WalkspeedLabel.Position = UDim2.new(0, 10, 0, 8)
@@ -231,8 +185,7 @@ WalkspeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 WalkspeedLabel.TextSize = 12
 WalkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Speed Display
-SpeedDisplay.Name = "SpeedDisplay"
+-- SpeedDisplay
 SpeedDisplay.Parent = RightFrame
 SpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SpeedDisplay.BorderSizePixel = 0
@@ -242,13 +195,9 @@ SpeedDisplay.Font = Enum.Font.Gotham
 SpeedDisplay.Text = tostring(currentSpeed)
 SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedDisplay.TextSize = 14
+Instance.new("UICorner", SpeedDisplay).CornerRadius = UDim.new(0, 5)
 
-local SpeedCorner = Instance.new("UICorner")
-SpeedCorner.CornerRadius = UDim.new(0, 5)
-SpeedCorner.Parent = SpeedDisplay
-
--- Minus Button (Walkspeed)
-MinusButton.Name = "MinusButton"
+-- MinusButton
 MinusButton.Parent = RightFrame
 MinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 MinusButton.BorderSizePixel = 0
@@ -258,13 +207,9 @@ MinusButton.Font = Enum.Font.GothamBold
 MinusButton.Text = "-"
 MinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinusButton.TextSize = 18
+Instance.new("UICorner", MinusButton).CornerRadius = UDim.new(0, 5)
 
-local MinusCorner = Instance.new("UICorner")
-MinusCorner.CornerRadius = UDim.new(0, 5)
-MinusCorner.Parent = MinusButton
-
--- Plus Button (Walkspeed)
-PlusButton.Name = "PlusButton"
+-- PlusButton
 PlusButton.Parent = RightFrame
 PlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 PlusButton.BorderSizePixel = 0
@@ -274,13 +219,9 @@ PlusButton.Font = Enum.Font.GothamBold
 PlusButton.Text = "+"
 PlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 PlusButton.TextSize = 18
+Instance.new("UICorner", PlusButton).CornerRadius = UDim.new(0, 5)
 
-local PlusCorner = Instance.new("UICorner")
-PlusCorner.CornerRadius = UDim.new(0, 5)
-PlusCorner.Parent = PlusButton
-
--- Jump Height Label
-JumpHeightLabel.Name = "JumpHeightLabel"
+-- JumpHeightLabel
 JumpHeightLabel.Parent = RightFrame
 JumpHeightLabel.BackgroundTransparency = 1
 JumpHeightLabel.Position = UDim2.new(0, 10, 0, 62)
@@ -291,8 +232,7 @@ JumpHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpHeightLabel.TextSize = 12
 JumpHeightLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Jump Height Display
-JumpHeightDisplay.Name = "JumpHeightDisplay"
+-- JumpHeightDisplay
 JumpHeightDisplay.Parent = RightFrame
 JumpHeightDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 JumpHeightDisplay.BorderSizePixel = 0
@@ -302,13 +242,9 @@ JumpHeightDisplay.Font = Enum.Font.Gotham
 JumpHeightDisplay.Text = tostring(currentJumpHeight)
 JumpHeightDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpHeightDisplay.TextSize = 14
+Instance.new("UICorner", JumpHeightDisplay).CornerRadius = UDim.new(0, 5)
 
-local JumpHeightCorner = Instance.new("UICorner")
-JumpHeightCorner.CornerRadius = UDim.new(0, 5)
-JumpHeightCorner.Parent = JumpHeightDisplay
-
--- Jump Minus Button
-JumpMinusButton.Name = "JumpMinusButton"
+-- JumpMinusButton
 JumpMinusButton.Parent = RightFrame
 JumpMinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 JumpMinusButton.BorderSizePixel = 0
@@ -318,13 +254,9 @@ JumpMinusButton.Font = Enum.Font.GothamBold
 JumpMinusButton.Text = "-"
 JumpMinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpMinusButton.TextSize = 18
+Instance.new("UICorner", JumpMinusButton).CornerRadius = UDim.new(0, 5)
 
-local JumpMinusCorner = Instance.new("UICorner")
-JumpMinusCorner.CornerRadius = UDim.new(0, 5)
-JumpMinusCorner.Parent = JumpMinusButton
-
--- Jump Plus Button
-JumpPlusButton.Name = "JumpPlusButton"
+-- JumpPlusButton
 JumpPlusButton.Parent = RightFrame
 JumpPlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
 JumpPlusButton.BorderSizePixel = 0
@@ -334,13 +266,9 @@ JumpPlusButton.Font = Enum.Font.GothamBold
 JumpPlusButton.Text = "+"
 JumpPlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpPlusButton.TextSize = 18
+Instance.new("UICorner", JumpPlusButton).CornerRadius = UDim.new(0, 5)
 
-local JumpPlusCorner = Instance.new("UICorner")
-JumpPlusCorner.CornerRadius = UDim.new(0, 5)
-JumpPlusCorner.Parent = JumpPlusButton
-
--- Infinite Jump Label
-InfiniteJumpLabel.Name = "InfiniteJumpLabel"
+-- InfiniteJumpLabel
 InfiniteJumpLabel.Parent = RightFrame
 InfiniteJumpLabel.BackgroundTransparency = 1
 InfiniteJumpLabel.Position = UDim2.new(0, 10, 0, 116)
@@ -351,8 +279,7 @@ InfiniteJumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfiniteJumpLabel.TextSize = 12
 InfiniteJumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Infinite Jump Button
-InfiniteJumpButton.Name = "InfiniteJumpButton"
+-- InfiniteJumpButton
 InfiniteJumpButton.Parent = RightFrame
 InfiniteJumpButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
 InfiniteJumpButton.BorderSizePixel = 0
@@ -362,111 +289,12 @@ InfiniteJumpButton.Font = Enum.Font.Gotham
 InfiniteJumpButton.Text = "OFF"
 InfiniteJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfiniteJumpButton.TextSize = 12
+Instance.new("UICorner", InfiniteJumpButton).CornerRadius = UDim.new(0, 5)
 
-local JumpCorner = Instance.new("UICorner")
-JumpCorner.CornerRadius = UDim.new(0, 5)
-JumpCorner.Parent = InfiniteJumpButton
-
--- ========== FAST ATTACK ELEMENTS ==========
--- Fast Attack Label
-FastAttackLabel.Name = "FastAttackLabel"
-FastAttackLabel.Parent = RightFrame
-FastAttackLabel.BackgroundTransparency = 1
-FastAttackLabel.Position = UDim2.new(0, 10, 0, 8)
-FastAttackLabel.Size = UDim2.new(0, 100, 0, 18)
-FastAttackLabel.Font = Enum.Font.Gotham
-FastAttackLabel.Text = "Fast Attack:"
-FastAttackLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-FastAttackLabel.TextSize = 12
-FastAttackLabel.TextXAlignment = Enum.TextXAlignment.Left
-FastAttackLabel.Visible = false
-
--- Fast Attack Button
-FastAttackButton.Name = "FastAttackButton"
-FastAttackButton.Parent = RightFrame
-FastAttackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-FastAttackButton.BorderSizePixel = 0
-FastAttackButton.Position = UDim2.new(0, 10, 0, 28)
-FastAttackButton.Size = UDim2.new(0, 55, 0, 26)
-FastAttackButton.Font = Enum.Font.Gotham
-FastAttackButton.Text = "OFF"
-FastAttackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FastAttackButton.TextSize = 12
-FastAttackButton.Visible = false
-
-local FastAttackCorner = Instance.new("UICorner")
-FastAttackCorner.CornerRadius = UDim.new(0, 5)
-FastAttackCorner.Parent = FastAttackButton
-
--- Attack Speed Label
-AttackSpeedLabel.Name = "AttackSpeedLabel"
-AttackSpeedLabel.Parent = RightFrame
-AttackSpeedLabel.BackgroundTransparency = 1
-AttackSpeedLabel.Position = UDim2.new(0, 10, 0, 62)
-AttackSpeedLabel.Size = UDim2.new(0, 100, 0, 18)
-AttackSpeedLabel.Font = Enum.Font.Gotham
-AttackSpeedLabel.Text = "Attack Speed:"
-AttackSpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-AttackSpeedLabel.TextSize = 12
-AttackSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-AttackSpeedLabel.Visible = false
-
--- Attack Speed Display
-AttackSpeedDisplay.Name = "AttackSpeedDisplay"
-AttackSpeedDisplay.Parent = RightFrame
-AttackSpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-AttackSpeedDisplay.BorderSizePixel = 0
-AttackSpeedDisplay.Position = UDim2.new(0, 10, 0, 82)
-AttackSpeedDisplay.Size = UDim2.new(0, 50, 0, 26)
-AttackSpeedDisplay.Font = Enum.Font.Gotham
-AttackSpeedDisplay.Text = tostring(attackSpeed)
-AttackSpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-AttackSpeedDisplay.TextSize = 14
-AttackSpeedDisplay.Visible = false
-
-local AttackSpeedCorner = Instance.new("UICorner")
-AttackSpeedCorner.CornerRadius = UDim.new(0, 5)
-AttackSpeedCorner.Parent = AttackSpeedDisplay
-
--- Attack Minus Button
-AttackMinusButton.Name = "AttackMinusButton"
-AttackMinusButton.Parent = RightFrame
-AttackMinusButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-AttackMinusButton.BorderSizePixel = 0
-AttackMinusButton.Position = UDim2.new(0, 65, 0, 82)
-AttackMinusButton.Size = UDim2.new(0, 28, 0, 26)
-AttackMinusButton.Font = Enum.Font.GothamBold
-AttackMinusButton.Text = "-"
-AttackMinusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AttackMinusButton.TextSize = 18
-AttackMinusButton.Visible = false
-
-local AttackMinusCorner = Instance.new("UICorner")
-AttackMinusCorner.CornerRadius = UDim.new(0, 5)
-AttackMinusCorner.Parent = AttackMinusButton
-
--- Attack Plus Button
-AttackPlusButton.Name = "AttackPlusButton"
-AttackPlusButton.Parent = RightFrame
-AttackPlusButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-AttackPlusButton.BorderSizePixel = 0
-AttackPlusButton.Position = UDim2.new(0, 98, 0, 82)
-AttackPlusButton.Size = UDim2.new(0, 28, 0, 26)
-AttackPlusButton.Font = Enum.Font.GothamBold
-AttackPlusButton.Text = "+"
-AttackPlusButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AttackPlusButton.TextSize = 18
-AttackPlusButton.Visible = false
-
-local AttackPlusCorner = Instance.new("UICorner")
-AttackPlusCorner.CornerRadius = UDim.new(0, 5)
-AttackPlusCorner.Parent = AttackPlusButton
-
--- Warning Label
-WarningLabel.Name = "WarningLabel"
+-- WarningLabel
 WarningLabel.Parent = RightFrame
 WarningLabel.BackgroundTransparency = 1
-WarningLabel.Position = UDim2.new(0, 10, 0, 220)
+WarningLabel.Position = UDim2.new(0, 10, 0, 170)
 WarningLabel.Size = UDim2.new(1, -20, 0, 16)
 WarningLabel.Font = Enum.Font.Gotham
 WarningLabel.Text = ""
@@ -474,8 +302,67 @@ WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 WarningLabel.TextSize = 10
 WarningLabel.Visible = false
 
--- Minimized Button (RGB Border)
-MinimizedButton.Name = "MinimizedButton"
+-- FlyLabel
+FlyLabel.Parent = RightFrame
+FlyLabel.BackgroundTransparency = 1
+FlyLabel.Position = UDim2.new(0, 10, 0, 8)
+FlyLabel.Size = UDim2.new(0, 100, 0, 18)
+FlyLabel.Font = Enum.Font.Gotham
+FlyLabel.Text = "Fly Mode:"
+FlyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyLabel.TextSize = 12
+FlyLabel.TextXAlignment = Enum.TextXAlignment.Left
+FlyLabel.Visible = false
+
+-- FlyToggleButton
+FlyToggleButton.Parent = RightFrame
+FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+FlyToggleButton.BorderSizePixel = 0
+FlyToggleButton.Position = UDim2.new(0, 10, 0, 28)
+FlyToggleButton.Size = UDim2.new(0, 55, 0, 26)
+FlyToggleButton.Font = Enum.Font.Gotham
+FlyToggleButton.Text = "OFF"
+FlyToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyToggleButton.TextSize = 12
+FlyToggleButton.Visible = false
+Instance.new("UICorner", FlyToggleButton).CornerRadius = UDim.new(0, 5)
+
+-- FlyControlFrame
+FlyControlFrame.Parent = ScreenGui
+FlyControlFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+FlyControlFrame.BorderSizePixel = 0
+FlyControlFrame.Position = UDim2.new(0.5, -25, 0.7, 0)
+FlyControlFrame.Size = UDim2.new(0, 50, 0, 60)
+FlyControlFrame.Active = true
+FlyControlFrame.Draggable = true
+FlyControlFrame.Visible = false
+Instance.new("UICorner", FlyControlFrame).CornerRadius = UDim.new(0, 8)
+
+-- FlyUpButton
+FlyUpButton.Parent = FlyControlFrame
+FlyUpButton.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
+FlyUpButton.BorderSizePixel = 0
+FlyUpButton.Position = UDim2.new(0, 3, 0, 3)
+FlyUpButton.Size = UDim2.new(1, -6, 0, 26)
+FlyUpButton.Font = Enum.Font.GothamBold
+FlyUpButton.Text = "UP"
+FlyUpButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+FlyUpButton.TextSize = 12
+Instance.new("UICorner", FlyUpButton).CornerRadius = UDim.new(0, 5)
+
+-- FlyDownButton
+FlyDownButton.Parent = FlyControlFrame
+FlyDownButton.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
+FlyDownButton.BorderSizePixel = 0
+FlyDownButton.Position = UDim2.new(0, 3, 0, 31)
+FlyDownButton.Size = UDim2.new(1, -6, 0, 26)
+FlyDownButton.Font = Enum.Font.GothamBold
+FlyDownButton.Text = "DOWN"
+FlyDownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+FlyDownButton.TextSize = 12
+Instance.new("UICorner", FlyDownButton).CornerRadius = UDim.new(0, 5)
+
+-- MinimizedButton
 MinimizedButton.Parent = ScreenGui
 MinimizedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MinimizedButton.BorderSizePixel = 0
@@ -488,12 +375,10 @@ MinimizedButton.TextSize = 16
 MinimizedButton.Visible = false
 MinimizedButton.Active = true
 MinimizedButton.Draggable = true
+Instance.new("UICorner", MinimizedButton).CornerRadius = UDim.new(0, 8)
 
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MinimizedButton
-
+local UIStroke = Instance.new("UIStroke", MinimizedButton)
 UIStroke.Thickness = 2
-UIStroke.Parent = MinimizedButton
 
 -- RGB Animation
 spawn(function()
@@ -505,17 +390,188 @@ spawn(function()
     end
 end)
 
--- Functions
+-- FLY FUNCTIONS
+local function disableFly()
+    flyEnabled = false
+    FlyControlFrame.Visible = false
+    
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
+            humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+            humanoid.PlatformStand = false
+            character.Animate.Disabled = false
+        end
+        
+        if bg then bg:Destroy() bg = nil end
+        if bv then bv:Destroy() bv = nil end
+    end
+    
+    ctrl = {f = 0, b = 0, l = 0, r = 0}
+    lastctrl = {f = 0, b = 0, l = 0, r = 0}
+    speed = 0
+end
+
+local function enableFly()
+    flyEnabled = true
+    FlyControlFrame.Visible = true
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    if not torso then return end
+    
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
+    humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+    humanoid.PlatformStand = true
+    character.Animate.Disabled = true
+    
+    bg = Instance.new("BodyGyro", torso)
+    bg.P = 9e4
+    bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.cframe = torso.CFrame
+    
+    bv = Instance.new("BodyVelocity", torso)
+    bv.velocity = Vector3.new(0, 0.1, 0)
+    bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+    
+    spawn(function()
+        while flyEnabled and character and humanoid and humanoid.Parent do
+            wait()
+            
+            if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                speed = speed + 0.5 + (speed / maxspeed)
+                if speed > maxspeed then speed = maxspeed end
+            elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+                speed = speed - 1
+                if speed < 0 then speed = 0 end
+            end
+            
+            if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f + ctrl.b)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - workspace.CurrentCamera.CoordinateFrame.p)) * speed
+                lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+            elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f + lastctrl.b)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * 0.2, 0).p) - workspace.CurrentCamera.CoordinateFrame.p)) * speed
+            else
+                bv.velocity = Vector3.new(0, 0, 0)
+            end
+            
+            bg.cframe = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / maxspeed), 0, 0)
+        end
+        
+        if not flyEnabled then disableFly() end
+    end)
+end
+
+-- Fly UP/DOWN handlers
+local flyUpConnection, flyDownConnection
+
+FlyUpButton.MouseButton1Down:Connect(function()
+    flyUpConnection = FlyUpButton.MouseEnter:Connect(function()
+        while flyUpConnection do
+            wait()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 1, 0)
+            end
+        end
+    end)
+end)
+
+FlyUpButton.MouseLeave:Connect(function()
+    if flyUpConnection then
+        flyUpConnection:Disconnect()
+        flyUpConnection = nil
+    end
+end)
+
+FlyDownButton.MouseButton1Down:Connect(function()
+    flyDownConnection = FlyDownButton.MouseEnter:Connect(function()
+        while flyDownConnection do
+            wait()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, -1, 0)
+            end
+        end
+    end)
+end)
+
+FlyDownButton.MouseLeave:Connect(function()
+    if flyDownConnection then
+        flyDownConnection:Disconnect()
+        flyDownConnection = nil
+    end
+end)
+
+-- WASD Controls for flying
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not flyEnabled then return end
+    
+    if input.KeyCode == Enum.KeyCode.W then
+        ctrl.f = 1
+    elseif input.KeyCode == Enum.KeyCode.S then
+        ctrl.b = -1
+    elseif input.KeyCode == Enum.KeyCode.A then
+        ctrl.l = -1
+    elseif input.KeyCode == Enum.KeyCode.D then
+        ctrl.r = 1
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if not flyEnabled then return end
+    
+    if input.KeyCode == Enum.KeyCode.W then
+        ctrl.f = 0
+    elseif input.KeyCode == Enum.KeyCode.S then
+        ctrl.b = 0
+    elseif input.KeyCode == Enum.KeyCode.A then
+        ctrl.l = 0
+    elseif input.KeyCode == Enum.KeyCode.D then
+        ctrl.r = 0
+    end
+end)
+
+-- OTHER FUNCTIONS
 local function updateSpeed()
     SpeedDisplay.Text = tostring(currentSpeed)
 end
 
 local function updateJumpHeight()
     JumpHeightDisplay.Text = tostring(currentJumpHeight)
-end
-
-local function updateAttackSpeed()
-    AttackSpeedDisplay.Text = tostring(attackSpeed)
 end
 
 local function showWarning(message)
@@ -528,11 +584,9 @@ end
 local function switchCategory(category)
     currentCategory = category
     
-    -- Reset all button colors
     MovementButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
-    CombatButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
+    AbilityButton.BackgroundColor3 = Color3.fromRGB(120, 120, 130)
     
-    -- Hide all content
     WalkspeedLabel.Visible = false
     SpeedDisplay.Visible = false
     MinusButton.Visible = false
@@ -543,15 +597,9 @@ local function switchCategory(category)
     JumpPlusButton.Visible = false
     InfiniteJumpLabel.Visible = false
     InfiniteJumpButton.Visible = false
+    FlyLabel.Visible = false
+    FlyToggleButton.Visible = false
     
-    FastAttackLabel.Visible = false
-    FastAttackButton.Visible = false
-    AttackSpeedLabel.Visible = false
-    AttackSpeedDisplay.Visible = false
-    AttackMinusButton.Visible = false
-    AttackPlusButton.Visible = false
-    
-    -- Show selected category
     if category == "Movement" then
         MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
         WalkspeedLabel.Visible = true
@@ -564,42 +612,16 @@ local function switchCategory(category)
         JumpPlusButton.Visible = true
         InfiniteJumpLabel.Visible = true
         InfiniteJumpButton.Visible = true
-    elseif category == "Combat" then
-        CombatButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-        FastAttackLabel.Visible = true
-        FastAttackButton.Visible = true
-        AttackSpeedLabel.Visible = true
-        AttackSpeedDisplay.Visible = true
-        AttackMinusButton.Visible = true
-        AttackPlusButton.Visible = true
+    elseif category == "Ability" then
+        AbilityButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        FlyLabel.Visible = true
+        FlyToggleButton.Visible = true
     end
 end
 
--- Fast Attack Function
-local function startFastAttack()
-    if attackConnection then
-        attackConnection:Disconnect()
-    end
-    
-    attackConnection = RunService.Heartbeat:Connect(function()
-        if fastAttackEnabled and guiActive then
-            local character = player.Character
-            if character then
-                local tool = character:FindFirstChildOfClass("Tool")
-                if tool and tool:FindFirstChild("Handle") then
-                    -- Try to activate the tool
-                    tool:Activate()
-                    wait(attackSpeed)
-                end
-            end
-        end
-    end)
-end
--- Reset all abilities to default
 local function resetAllAbilities()
     guiActive = false
     
-    -- Reset walkspeed to default
     local character = player.Character
     if character then
         local humanoid = character:FindFirstChild("Humanoid")
@@ -609,19 +631,15 @@ local function resetAllAbilities()
         end
     end
     
-    -- Disable infinite jump and fast attack
     infiniteJumpEnabled = false
-    fastAttackEnabled = false
     
-    -- Disconnect all connections
+    if flyEnabled then
+        disableFly()
+    end
+    
     if heartbeatConnection then
         heartbeatConnection:Disconnect()
         heartbeatConnection = nil
-    end
-    
-    if attackConnection then
-        attackConnection:Disconnect()
-        attackConnection = nil
     end
     
     print("All abilities disabled!")
@@ -645,16 +663,15 @@ heartbeatConnection = RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Button Functions
+-- BUTTON CONNECTIONS
 MovementButton.MouseButton1Click:Connect(function()
     switchCategory("Movement")
 end)
 
-CombatButton.MouseButton1Click:Connect(function()
-    switchCategory("Combat")
+AbilityButton.MouseButton1Click:Connect(function()
+    switchCategory("Ability")
 end)
 
--- Walkspeed Buttons
 PlusButton.MouseButton1Click:Connect(function()
     if currentSpeed < 100 then
         currentSpeed = currentSpeed + 1
@@ -671,7 +688,6 @@ MinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Jump Height Buttons
 JumpPlusButton.MouseButton1Click:Connect(function()
     if currentJumpHeight < 50 then
         currentJumpHeight = math.floor((currentJumpHeight + 0.5) * 10 + 0.5) / 10
@@ -688,7 +704,6 @@ JumpMinusButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Infinite Jump Button
 InfiniteJumpButton.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
     if infiniteJumpEnabled then
@@ -700,51 +715,18 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fast Attack Button
-FastAttackButton.MouseButton1Click:Connect(function()
-    fastAttackEnabled = not fastAttackEnabled
-    if fastAttackEnabled then
-        FastAttackButton.Text = "ON"
-        FastAttackButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-        startFastAttack()
-        print("Fast Attack Enabled!")
+FlyToggleButton.MouseButton1Click:Connect(function()
+    if not flyEnabled then
+        enableFly()
+        FlyToggleButton.Text = "ON"
+        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
     else
-        FastAttackButton.Text = "OFF"
-        FastAttackButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-        if attackConnection then
-            attackConnection:Disconnect()
-            attackConnection = nil
-        end
-        print("Fast Attack Disabled!")
+        disableFly()
+        FlyToggleButton.Text = "OFF"
+        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
 end)
 
--- Attack Speed Buttons
-AttackPlusButton.MouseButton1Click:Connect(function()
-    if attackSpeed < 1 then
-        attackSpeed = math.floor((attackSpeed + 0.05) * 100 + 0.5) / 100
-        updateAttackSpeed()
-        if fastAttackEnabled then
-            startFastAttack()
-        end
-    else
-        showWarning("Attack Speed cannot be more than 1.0")
-    end
-end)
-
-AttackMinusButton.MouseButton1Click:Connect(function()
-    if attackSpeed > 0.01 then
-        attackSpeed = math.floor((attackSpeed - 0.05) * 100 + 0.5) / 100
-        updateAttackSpeed()
-        if fastAttackEnabled then
-            startFastAttack()
-        end
-    else
-        showWarning("Attack Speed cannot be less than 0.01")
-    end
-end)
-
--- Minimize Button
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     MainFrame.Visible = not isMinimized
@@ -759,7 +741,6 @@ MinimizedButton.MouseButton1Click:Connect(function()
     print("GUI Restored!")
 end)
 
--- Exit Button
 ExitButton.MouseButton1Click:Connect(function()
     resetAllAbilities()
     ScreenGui:Destroy()
@@ -781,16 +762,17 @@ end)
 
 -- Character Reset Handler
 player.CharacterAdded:Connect(function(character)
+    if flyEnabled then
+        disableFly()
+        FlyToggleButton.Text = "OFF"
+        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+    end
+    
     if guiActive then
         local humanoid = character:WaitForChild("Humanoid")
         wait(0.1)
         humanoid.WalkSpeed = currentSpeed
         humanoid.JumpHeight = currentJumpHeight
-        
-        -- Restart fast attack if enabled
-        if fastAttackEnabled then
-            startFastAttack()
-        end
     else
         local humanoid = character:WaitForChild("Humanoid")
         wait(0.1)
