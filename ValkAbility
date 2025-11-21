@@ -16,11 +16,6 @@ local speeds = 1
 local nowe = false
 local flyUpConnection, flyDownConnection
 
--- Fling Aura Variables
-local flingAuraEnabled = false
-local flingDistance = 5
-local flingConnection = nil
-
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
@@ -52,15 +47,6 @@ local FlySpeedLabel = Instance.new("TextLabel")
 local FlySpeedDisplay = Instance.new("TextLabel")
 local FlySpeedMinus = Instance.new("TextButton")
 local FlySpeedPlus = Instance.new("TextButton")
-
--- Fling Aura Elements (Ability Category)
-local FlingAuraLabel = Instance.new("TextLabel")
-local FlingAuraButton = Instance.new("TextButton")
-local FlingDistanceLabel = Instance.new("TextLabel")
-local FlingDistanceDisplay = Instance.new("TextLabel")
-local FlingSliderBack = Instance.new("Frame")
-local FlingSliderFill = Instance.new("Frame")
-local FlingSliderButton = Instance.new("TextButton")
 
 local MinimizedButton = Instance.new("TextButton")
 
@@ -190,7 +176,7 @@ RightFrame.BorderSizePixel = 0
 RightFrame.Position = UDim2.new(0, 90, 0, 0)
 RightFrame.Size = UDim2.new(1, -90, 1, 0)
 RightFrame.ScrollBarThickness = 3
-RightFrame.CanvasSize = UDim2.new(0, 0, 0, 220)
+RightFrame.CanvasSize = UDim2.new(0, 0, 0, 200)
 RightFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 255, 70)
 Instance.new("UICorner", RightFrame).CornerRadius = UDim.new(0, 8)
 
@@ -399,71 +385,6 @@ FlySpeedPlus.TextSize = 18
 FlySpeedPlus.Visible = false
 Instance.new("UICorner", FlySpeedPlus).CornerRadius = UDim.new(0, 5)
 
--- ============ FLING AURA ELEMENTS ============
--- FlingAuraLabel
-FlingAuraLabel.Parent = RightFrame
-FlingAuraLabel.BackgroundTransparency = 1
-FlingAuraLabel.Position = UDim2.new(0, 10, 0, 116)
-FlingAuraLabel.Size = UDim2.new(0, 100, 0, 18)
-FlingAuraLabel.Font = Enum.Font.Gotham
-FlingAuraLabel.Text = "Fling Aura:"
-FlingAuraLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlingAuraLabel.TextSize = 12
-FlingAuraLabel.TextXAlignment = Enum.TextXAlignment.Left
-FlingAuraLabel.Visible = false
-
--- FlingAuraButton
-FlingAuraButton.Parent = RightFrame
-FlingAuraButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-FlingAuraButton.BorderSizePixel = 0
-FlingAuraButton.Position = UDim2.new(0, 10, 0, 136)
-FlingAuraButton.Size = UDim2.new(0, 55, 0, 26)
-FlingAuraButton.Font = Enum.Font.Gotham
-FlingAuraButton.Text = "OFF"
-FlingAuraButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlingAuraButton.TextSize = 12
-FlingAuraButton.Visible = false
-Instance.new("UICorner", FlingAuraButton).CornerRadius = UDim.new(0, 5)
-
--- FlingDistanceLabel
-FlingDistanceLabel.Parent = RightFrame
-FlingDistanceLabel.BackgroundTransparency = 1
-FlingDistanceLabel.Position = UDim2.new(0, 10, 0, 170)
-FlingDistanceLabel.Size = UDim2.new(0, 120, 0, 18)
-FlingDistanceLabel.Font = Enum.Font.Gotham
-FlingDistanceLabel.Text = "Fling Distance: 5"
-FlingDistanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlingDistanceLabel.TextSize = 12
-FlingDistanceLabel.TextXAlignment = Enum.TextXAlignment.Left
-FlingDistanceLabel.Visible = false
-
--- FlingSliderBack
-FlingSliderBack.Parent = RightFrame
-FlingSliderBack.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-FlingSliderBack.BorderSizePixel = 0
-FlingSliderBack.Position = UDim2.new(0, 10, 0, 195)
-FlingSliderBack.Size = UDim2.new(0, 160, 0, 8)
-FlingSliderBack.Visible = false
-Instance.new("UICorner", FlingSliderBack).CornerRadius = UDim.new(0, 4)
-
--- FlingSliderFill
-FlingSliderFill.Parent = FlingSliderBack
-FlingSliderFill.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-FlingSliderFill.BorderSizePixel = 0
-FlingSliderFill.Size = UDim2.new(0.267, 0, 1, 0)
-Instance.new("UICorner", FlingSliderFill).CornerRadius = UDim.new(0, 4)
-
--- FlingSliderButton
-FlingSliderButton.Parent = FlingSliderBack
-FlingSliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-FlingSliderButton.BorderSizePixel = 0
-FlingSliderButton.Position = UDim2.new(0.267, -8, 0.5, -8)
-FlingSliderButton.Size = UDim2.new(0, 16, 0, 16)
-FlingSliderButton.Text = ""
-FlingSliderButton.AutoButtonColor = false
-local sliderCorner = Instance.new("UICorner", FlingSliderButton)
-sliderCorner.CornerRadius = UDim.new(1, 0)
-
 -- FlyControlFrame (Only UP/DOWN buttons - Draggable)
 FlyControlFrame.Parent = ScreenGui
 FlyControlFrame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
@@ -481,7 +402,7 @@ FlyUpButton.Parent = FlyControlFrame
 FlyUpButton.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
 FlyUpButton.BorderSizePixel = 0
 FlyUpButton.Size = UDim2.new(0, 44, 0, 28)
-FlyUpButton.Font = Enum.Font.SourceSans
+FlyUpButton.Font = Enum.Font.GothamBold
 FlyUpButton.Text = "UP"
 FlyUpButton.TextColor3 = Color3.fromRGB(0, 0, 0)
 FlyUpButton.TextSize = 14
@@ -493,7 +414,7 @@ FlyDownButton.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
 FlyDownButton.BorderSizePixel = 0
 FlyDownButton.Position = UDim2.new(0, 0, 0.491228074, 0)
 FlyDownButton.Size = UDim2.new(0, 44, 0, 28)
-FlyDownButton.Font = Enum.Font.SourceSans
+FlyDownButton.Font = Enum.Font.GothamBold
 FlyDownButton.Text = "DOWN"
 FlyDownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
 FlyDownButton.TextSize = 14
@@ -526,8 +447,7 @@ spawn(function()
     end
 end)
 
-
--- ============ ORIGINAL FLY FUNCTIONS ============
+-- ============ ORIGINAL FLY FUNCTIONS (DIPERBAIKI) ============
 local speaker = player
 local chr = player.Character
 local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
@@ -538,12 +458,17 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
     Text = "Original Fly System Integrated";
     Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
 
--- Original Fly Toggle Function
+-- Original Fly Toggle Function (DIPERBAIKI)
 local function toggleFly()
     if nowe == true then
         -- DISABLE FLY
         nowe = false
         FlyControlFrame.Visible = false
+        
+        -- ===== PERBAIKAN: UPDATE UI DISINI =====
+        FlyToggleButton.Text = "OFF"
+        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+        -- =======================================
 
         speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,true)
         speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,true)
@@ -565,6 +490,11 @@ local function toggleFly()
         -- ENABLE FLY
         nowe = true
         FlyControlFrame.Visible = true
+        
+        -- ===== PERBAIKAN: UPDATE UI DISINI =====
+        FlyToggleButton.Text = "ON"
+        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+        -- =======================================
 
         for i = 1, speeds do
             spawn(function()
@@ -813,10 +743,6 @@ local function switchCategory(category)
     FlySpeedDisplay.Visible = false
     FlySpeedMinus.Visible = false
     FlySpeedPlus.Visible = false
-    FlingAuraLabel.Visible = false
-    FlingAuraButton.Visible = false
-    FlingDistanceLabel.Visible = false
-    FlingSliderBack.Visible = false
     
     if category == "Movement" then
         MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
@@ -838,10 +764,6 @@ local function switchCategory(category)
         FlySpeedDisplay.Visible = true
         FlySpeedMinus.Visible = true
         FlySpeedPlus.Visible = true
-        FlingAuraLabel.Visible = true
-        FlingAuraButton.Visible = true
-        FlingDistanceLabel.Visible = true
-        FlingSliderBack.Visible = true
     end
 end
 
@@ -860,20 +782,7 @@ local function resetAllAbilities()
     infiniteJumpEnabled = false
     
     if nowe == true then
-        nowe = false
         toggleFly()
-        FlyToggleButton.Text = "OFF"
-        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-    
-    if flingAuraEnabled then
-        flingAuraEnabled = false
-        if flingConnection then
-            flingConnection:Disconnect()
-            flingConnection = nil
-        end
-        FlingAuraButton.Text = "OFF"
-        FlingAuraButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
     
     if heartbeatConnection then
@@ -954,19 +863,10 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fly Toggle Button
+-- ===== PERBAIKAN: Fly Toggle Button (DISEDERHANAKAN) =====
 FlyToggleButton.MouseButton1Click:Connect(function()
-    nowe = not nowe
-    
-    if nowe then
-        FlyToggleButton.Text = "ON"
-        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-    else
-        FlyToggleButton.Text = "OFF"
-        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-    
     toggleFly()
+    -- UI sudah diupdate di dalam fungsi toggleFly()
 end)
 
 -- Fly Speed Buttons
@@ -985,110 +885,6 @@ FlySpeedMinus.MouseButton1Click:Connect(function()
     else
         speeds = speeds - 1
         updateFlySpeed()
-    end
-end)
-
--- ============ FLING AURA SYSTEM ============
-local function updateFlingDistance(value)
-    flingDistance = math.clamp(math.floor(value), 1, 15)
-    FlingDistanceLabel.Text = "Fling Distance: " .. tostring(flingDistance)
-    local percent = (flingDistance - 1) / 14
-    FlingSliderFill.Size = UDim2.new(percent, 0, 1, 0)
-    FlingSliderButton.Position = UDim2.new(percent, -8, 0.5, -8)
-end
-
-local function startFlingAura()
-    if flingConnection then
-        flingConnection:Disconnect()
-    end
-    
-    flingConnection = RunService.Heartbeat:Connect(function()
-        if not flingAuraEnabled then return end
-        
-        local character = player.Character
-        if not character then return end
-        
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if not humanoidRootPart then return end
-        
-        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player then
-                local otherCharacter = otherPlayer.Character
-                if otherCharacter then
-                    local otherHRP = otherCharacter:FindFirstChild("HumanoidRootPart")
-                    if otherHRP then
-                        local distance = (humanoidRootPart.Position - otherHRP.Position).Magnitude
-                        if distance <= flingDistance then
-                            local direction = (otherHRP.Position - humanoidRootPart.Position).Unit
-                            local flingForce = direction * 100
-                            
-                            local bodyVelocity = Instance.new("BodyVelocity")
-                            bodyVelocity.Velocity = flingForce
-                            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                            bodyVelocity.Parent = otherHRP
-                            
-                            game:GetService("Debris"):AddItem(bodyVelocity, 0.1)
-                        end
-                    end
-                end
-            end
-        end
-    end)
-end
-
-local function stopFlingAura()
-    if flingConnection then
-        flingConnection:Disconnect()
-        flingConnection = nil
-    end
-end
-
--- Fling Aura Toggle Button
-FlingAuraButton.MouseButton1Click:Connect(function()
-    flingAuraEnabled = not flingAuraEnabled
-    if flingAuraEnabled then
-        FlingAuraButton.Text = "ON"
-        FlingAuraButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
-        startFlingAura()
-    else
-        FlingAuraButton.Text = "OFF"
-        FlingAuraButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-        stopFlingAura()
-    end
-end)
-
--- Fling Slider Logic
-local dragging = false
-
-FlingSliderButton.MouseButton1Down:Connect(function()
-    dragging = true
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local sliderPos = FlingSliderBack.AbsolutePosition.X
-        local sliderSize = FlingSliderBack.AbsoluteSize.X
-        local relativePos = math.clamp((mousePos.X - sliderPos) / sliderSize, 0, 1)
-        local newValue = 1 + (relativePos * 14)
-        updateFlingDistance(newValue)
-    end
-end)
-
-FlingSliderBack.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local mousePos = UserInputService:GetMouseLocation()
-        local sliderPos = FlingSliderBack.AbsolutePosition.X
-        local sliderSize = FlingSliderBack.AbsoluteSize.X
-        local relativePos = math.clamp((mousePos.X - sliderPos) / sliderSize, 0, 1)
-        local newValue = 1 + (relativePos * 14)
-        updateFlingDistance(newValue)
     end
 end)
 
@@ -1132,13 +928,6 @@ player.CharacterAdded:Connect(function(character)
         FlyControlFrame.Visible = false
         FlyToggleButton.Text = "OFF"
         FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-    end
-    
-    if flingAuraEnabled then
-        stopFlingAura()
-        flingAuraEnabled = false
-        FlingAuraButton.Text = "OFF"
-        FlingAuraButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
     
     if guiActive then
