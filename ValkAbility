@@ -2,7 +2,7 @@ local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- Variables
+-- Movement Variables
 local currentSpeed = 16
 local currentJumpHeight = 7.2
 local infiniteJumpEnabled = false
@@ -11,13 +11,10 @@ local currentCategory = "Movement"
 local guiActive = true
 local heartbeatConnection = nil
 
--- Fly Variables
-local flyEnabled = false
-local ctrl = {f = 0, b = 0, l = 0, r = 0}
-local lastctrl = {f = 0, b = 0, l = 0, r = 0}
-local maxspeed = 50
-local speed = 0
-local bg, bv
+-- Original Fly Variables
+local speeds = 1
+local nowe = false
+local flyUpConnection, flyDownConnection
 
 -- GUI Creation
 local ScreenGui = Instance.new("ScreenGui")
@@ -42,17 +39,27 @@ local JumpPlusButton = Instance.new("TextButton")
 local InfiniteJumpLabel = Instance.new("TextLabel")
 local InfiniteJumpButton = Instance.new("TextButton")
 local WarningLabel = Instance.new("TextLabel")
+
+-- Fly Elements (Ability Category)
 local FlyLabel = Instance.new("TextLabel")
 local FlyToggleButton = Instance.new("TextButton")
+local FlySpeedLabel = Instance.new("TextLabel")
+local FlySpeedDisplay = Instance.new("TextLabel")
+local FlySpeedMinus = Instance.new("TextButton")
+local FlySpeedPlus = Instance.new("TextButton")
+
+local MinimizedButton = Instance.new("TextButton")
+
+-- Fly Control Frame
 local FlyControlFrame = Instance.new("Frame")
 local FlyUpButton = Instance.new("TextButton")
 local FlyDownButton = Instance.new("TextButton")
-local MinimizedButton = Instance.new("TextButton")
 
 -- ScreenGui
 ScreenGui.Name = "AbilityGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
 
 -- MainFrame
 MainFrame.Name = "MainFrame"
@@ -66,7 +73,6 @@ MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 -- TopBar
-TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 TopBar.BorderSizePixel = 0
@@ -302,6 +308,7 @@ WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 WarningLabel.TextSize = 10
 WarningLabel.Visible = false
 
+-- ============ FLY ELEMENTS (ABILITY CATEGORY) ============
 -- FlyLabel
 FlyLabel.Parent = RightFrame
 FlyLabel.BackgroundTransparency = 1
@@ -327,40 +334,90 @@ FlyToggleButton.TextSize = 12
 FlyToggleButton.Visible = false
 Instance.new("UICorner", FlyToggleButton).CornerRadius = UDim.new(0, 5)
 
--- FlyControlFrame
+-- FlySpeedLabel
+FlySpeedLabel.Parent = RightFrame
+FlySpeedLabel.BackgroundTransparency = 1
+FlySpeedLabel.Position = UDim2.new(0, 10, 0, 62)
+FlySpeedLabel.Size = UDim2.new(0, 100, 0, 18)
+FlySpeedLabel.Font = Enum.Font.Gotham
+FlySpeedLabel.Text = "Fly Speed:"
+FlySpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlySpeedLabel.TextSize = 12
+FlySpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+FlySpeedLabel.Visible = false
+
+-- FlySpeedDisplay
+FlySpeedDisplay.Parent = RightFrame
+FlySpeedDisplay.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+FlySpeedDisplay.BorderSizePixel = 0
+FlySpeedDisplay.Position = UDim2.new(0, 10, 0, 82)
+FlySpeedDisplay.Size = UDim2.new(0, 50, 0, 26)
+FlySpeedDisplay.Font = Enum.Font.Gotham
+FlySpeedDisplay.Text = tostring(speeds)
+FlySpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlySpeedDisplay.TextSize = 14
+FlySpeedDisplay.Visible = false
+Instance.new("UICorner", FlySpeedDisplay).CornerRadius = UDim.new(0, 5)
+
+-- FlySpeedMinus
+FlySpeedMinus.Parent = RightFrame
+FlySpeedMinus.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+FlySpeedMinus.BorderSizePixel = 0
+FlySpeedMinus.Position = UDim2.new(0, 65, 0, 82)
+FlySpeedMinus.Size = UDim2.new(0, 28, 0, 26)
+FlySpeedMinus.Font = Enum.Font.GothamBold
+FlySpeedMinus.Text = "-"
+FlySpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlySpeedMinus.TextSize = 18
+FlySpeedMinus.Visible = false
+Instance.new("UICorner", FlySpeedMinus).CornerRadius = UDim.new(0, 5)
+
+-- FlySpeedPlus
+FlySpeedPlus.Parent = RightFrame
+FlySpeedPlus.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
+FlySpeedPlus.BorderSizePixel = 0
+FlySpeedPlus.Position = UDim2.new(0, 98, 0, 82)
+FlySpeedPlus.Size = UDim2.new(0, 28, 0, 26)
+FlySpeedPlus.Font = Enum.Font.GothamBold
+FlySpeedPlus.Text = "+"
+FlySpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlySpeedPlus.TextSize = 18
+FlySpeedPlus.Visible = false
+Instance.new("UICorner", FlySpeedPlus).CornerRadius = UDim.new(0, 5)
+
+-- FlyControlFrame (Only UP/DOWN buttons - Draggable)
 FlyControlFrame.Parent = ScreenGui
-FlyControlFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-FlyControlFrame.BorderSizePixel = 0
-FlyControlFrame.Position = UDim2.new(0.5, -25, 0.7, 0)
-FlyControlFrame.Size = UDim2.new(0, 50, 0, 60)
+FlyControlFrame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
+FlyControlFrame.BorderColor3 = Color3.fromRGB(103, 221, 213)
+FlyControlFrame.BorderSizePixel = 2
+FlyControlFrame.Position = UDim2.new(0.1, 0, 0.38, 0)
+FlyControlFrame.Size = UDim2.new(0, 44, 0, 57)
 FlyControlFrame.Active = true
 FlyControlFrame.Draggable = true
 FlyControlFrame.Visible = false
-Instance.new("UICorner", FlyControlFrame).CornerRadius = UDim.new(0, 8)
 
 -- FlyUpButton
+FlyUpButton.Name = "up"
 FlyUpButton.Parent = FlyControlFrame
 FlyUpButton.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
 FlyUpButton.BorderSizePixel = 0
-FlyUpButton.Position = UDim2.new(0, 3, 0, 3)
-FlyUpButton.Size = UDim2.new(1, -6, 0, 26)
-FlyUpButton.Font = Enum.Font.GothamBold
+FlyUpButton.Size = UDim2.new(0, 44, 0, 28)
+FlyUpButton.Font = Enum.Font.SourceSans
 FlyUpButton.Text = "UP"
 FlyUpButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-FlyUpButton.TextSize = 12
-Instance.new("UICorner", FlyUpButton).CornerRadius = UDim.new(0, 5)
+FlyUpButton.TextSize = 14
 
 -- FlyDownButton
+FlyDownButton.Name = "down"
 FlyDownButton.Parent = FlyControlFrame
 FlyDownButton.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
 FlyDownButton.BorderSizePixel = 0
-FlyDownButton.Position = UDim2.new(0, 3, 0, 31)
-FlyDownButton.Size = UDim2.new(1, -6, 0, 26)
-FlyDownButton.Font = Enum.Font.GothamBold
+FlyDownButton.Position = UDim2.new(0, 0, 0.491228074, 0)
+FlyDownButton.Size = UDim2.new(0, 44, 0, 28)
+FlyDownButton.Font = Enum.Font.SourceSans
 FlyDownButton.Text = "DOWN"
 FlyDownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-FlyDownButton.TextSize = 12
-Instance.new("UICorner", FlyDownButton).CornerRadius = UDim.new(0, 5)
+FlyDownButton.TextSize = 14
 
 -- MinimizedButton
 MinimizedButton.Parent = ScreenGui
@@ -390,188 +447,261 @@ spawn(function()
     end
 end)
 
--- FLY FUNCTIONS
-local function disableFly()
-    flyEnabled = false
-    FlyControlFrame.Visible = false
-    
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, true)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
-            humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
-            humanoid.PlatformStand = false
-            character.Animate.Disabled = false
+-- ============ ORIGINAL FLY FUNCTIONS ============
+local speaker = player
+local chr = player.Character
+local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+local tpwalking = false
+
+game:GetService("StarterGui"):SetCore("SendNotification", { 
+    Title = "ValkHub - Fly Loaded";
+    Text = "Original Fly System Integrated";
+    Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
+
+-- Original Fly Toggle Function
+local function toggleFly()
+    if nowe == true then
+        -- DISABLE FLY
+        nowe = false
+        FlyControlFrame.Visible = false
+
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,true)
+        speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+    else 
+        -- ENABLE FLY
+        nowe = true
+        FlyControlFrame.Visible = true
+
+        for i = 1, speeds do
+            spawn(function()
+                local hb = game:GetService("RunService").Heartbeat    
+                tpwalking = true
+                local chr = game.Players.LocalPlayer.Character
+                local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                    if hum.MoveDirection.Magnitude > 0 then
+                        chr:TranslateBy(hum.MoveDirection)
+                    end
+                end
+            end)
         end
         
-        if bg then bg:Destroy() bg = nil end
-        if bv then bv:Destroy() bv = nil end
-    end
-    
-    ctrl = {f = 0, b = 0, l = 0, r = 0}
-    lastctrl = {f = 0, b = 0, l = 0, r = 0}
-    speed = 0
-end
+        game.Players.LocalPlayer.Character.Animate.Disabled = true
+        local Char = game.Players.LocalPlayer.Character
+        local Hum = Char:FindFirstChildOfClass("Humanoid") or Char:FindFirstChildOfClass("AnimationController")
 
-local function enableFly()
-    flyEnabled = true
-    FlyControlFrame.Visible = true
-    
-    local character = player.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    
-    local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
-    if not torso then return end
-    
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
-    humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
-    humanoid.PlatformStand = true
-    character.Animate.Disabled = true
-    
-    bg = Instance.new("BodyGyro", torso)
-    bg.P = 9e4
-    bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-    bg.cframe = torso.CFrame
-    
-    bv = Instance.new("BodyVelocity", torso)
-    bv.velocity = Vector3.new(0, 0.1, 0)
-    bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-    
-    spawn(function()
-        while flyEnabled and character and humanoid and humanoid.Parent do
-            wait()
-            
+        for i,v in next, Hum:GetPlayingAnimationTracks() do
+            v:AdjustSpeed(0)
+        end
+        
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
+        speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+    end
+
+    -- Original Fly Logic (R6/R15 compatible)
+    if game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+        local plr = game.Players.LocalPlayer
+        local torso = plr.Character.Torso
+        local flying = true
+        local deb = true
+        local ctrl = {f = 0, b = 0, l = 0, r = 0}
+        local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+        local maxspeed = 50
+        local speed = 0
+
+        local bg = Instance.new("BodyGyro", torso)
+        bg.P = 9e4
+        bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.cframe = torso.CFrame
+        local bv = Instance.new("BodyVelocity", torso)
+        bv.velocity = Vector3.new(0,0.1,0)
+        bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        if nowe == true then
+            plr.Character.Humanoid.PlatformStand = true
+        end
+        while nowe == true or game:GetService("Players").LocalPlayer.Character.Humanoid.Health == 0 do
+            game:GetService("RunService").RenderStepped:Wait()
+
             if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
-                speed = speed + 0.5 + (speed / maxspeed)
-                if speed > maxspeed then speed = maxspeed end
+                speed = speed+.5+(speed/maxspeed)
+                if speed > maxspeed then
+                    speed = maxspeed
+                end
             elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
-                speed = speed - 1
-                if speed < 0 then speed = 0 end
+                speed = speed-1
+                if speed < 0 then
+                    speed = 0
+                end
             end
-            
             if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
-                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f + ctrl.b)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - workspace.CurrentCamera.CoordinateFrame.p)) * speed
+                bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
                 lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
             elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
-                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f + lastctrl.b)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * 0.2, 0).p) - workspace.CurrentCamera.CoordinateFrame.p)) * speed
+                bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
             else
-                bv.velocity = Vector3.new(0, 0, 0)
+                bv.velocity = Vector3.new(0,0,0)
             end
-            
-            bg.cframe = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / maxspeed), 0, 0)
+            bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
         end
-        
-        if not flyEnabled then disableFly() end
-    end)
+        ctrl = {f = 0, b = 0, l = 0, r = 0}
+        lastctrl = {f = 0, b = 0, l = 0, r = 0}
+        speed = 0
+        bg:Destroy()
+        bv:Destroy()
+        plr.Character.Humanoid.PlatformStand = false
+        game.Players.LocalPlayer.Character.Animate.Disabled = false
+        tpwalking = false
+    else
+        local plr = game.Players.LocalPlayer
+        local UpperTorso = plr.Character.UpperTorso
+        local flying = true
+        local deb = true
+        local ctrl = {f = 0, b = 0, l = 0, r = 0}
+        local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+        local maxspeed = 50
+        local speed = 0
+
+        local bg = Instance.new("BodyGyro", UpperTorso)
+        bg.P = 9e4
+        bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.cframe = UpperTorso.CFrame
+        local bv = Instance.new("BodyVelocity", UpperTorso)
+        bv.velocity = Vector3.new(0,0.1,0)
+        bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        if nowe == true then
+            plr.Character.Humanoid.PlatformStand = true
+        end
+        while nowe == true or game:GetService("Players").LocalPlayer.Character.Humanoid.Health == 0 do
+            wait()
+
+            if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                speed = speed+.5+(speed/maxspeed)
+                if speed > maxspeed then
+                    speed = maxspeed
+                end
+            elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+                speed = speed-1
+                if speed < 0 then
+                    speed = 0
+                end
+            end
+            if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+            elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+            else
+                bv.velocity = Vector3.new(0,0,0)
+            end
+
+            bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
+        end
+        ctrl = {f = 0, b = 0, l = 0, r = 0}
+        lastctrl = {f = 0, b = 0, l = 0, r = 0}
+        speed = 0
+        bg:Destroy()
+        bv:Destroy()
+        plr.Character.Humanoid.PlatformStand = false
+        game.Players.LocalPlayer.Character.Animate.Disabled = false
+        tpwalking = false
+    end
 end
 
--- Fly UP/DOWN handlers
-local flyUpConnection, flyDownConnection
-
-FlyUpButton.MouseButton1Down:Connect(function()
-    flyUpConnection = FlyUpButton.MouseEnter:Connect(function()
+-- UP/DOWN Button Handlers (Original)
+FlyUpButton.MouseButton1Down:connect(function()
+    flyUpConnection = FlyUpButton.MouseEnter:connect(function()
         while flyUpConnection do
             wait()
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 1, 0)
-            end
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,1,0)
         end
     end)
 end)
 
-FlyUpButton.MouseLeave:Connect(function()
+FlyUpButton.MouseLeave:connect(function()
     if flyUpConnection then
         flyUpConnection:Disconnect()
         flyUpConnection = nil
     end
 end)
 
-FlyDownButton.MouseButton1Down:Connect(function()
-    flyDownConnection = FlyDownButton.MouseEnter:Connect(function()
+FlyDownButton.MouseButton1Down:connect(function()
+    flyDownConnection = FlyDownButton.MouseEnter:connect(function()
         while flyDownConnection do
             wait()
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, -1, 0)
-            end
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-1,0)
         end
     end)
 end)
 
-FlyDownButton.MouseLeave:Connect(function()
+FlyDownButton.MouseLeave:connect(function()
     if flyDownConnection then
         flyDownConnection:Disconnect()
         flyDownConnection = nil
     end
 end)
 
--- WASD Controls for flying
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed or not flyEnabled then return end
-    
-    if input.KeyCode == Enum.KeyCode.W then
-        ctrl.f = 1
-    elseif input.KeyCode == Enum.KeyCode.S then
-        ctrl.b = -1
-    elseif input.KeyCode == Enum.KeyCode.A then
-        ctrl.l = -1
-    elseif input.KeyCode == Enum.KeyCode.D then
-        ctrl.r = 1
-    end
+-- Character Reset Handler
+game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(char)
+    wait(0.7)
+    game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
+    game.Players.LocalPlayer.Character.Animate.Disabled = false
 end)
 
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-    if not flyEnabled then return end
-    
-    if input.KeyCode == Enum.KeyCode.W then
-        ctrl.f = 0
-    elseif input.KeyCode == Enum.KeyCode.S then
-        ctrl.b = 0
-    elseif input.KeyCode == Enum.KeyCode.A then
-        ctrl.l = 0
-    elseif input.KeyCode == Enum.KeyCode.D then
-        ctrl.r = 0
-    end
-end)
-
--- OTHER FUNCTIONS
+-- ============ OTHER FUNCTIONS ============
 local function updateSpeed()
     SpeedDisplay.Text = tostring(currentSpeed)
 end
 
 local function updateJumpHeight()
     JumpHeightDisplay.Text = tostring(currentJumpHeight)
+end
+
+local function updateFlySpeed()
+    FlySpeedDisplay.Text = tostring(speeds)
+    if nowe == true then
+        tpwalking = false
+        for i = 1, speeds do
+            spawn(function()
+                local hb = game:GetService("RunService").Heartbeat    
+                tpwalking = true
+                local chr = game.Players.LocalPlayer.Character
+                local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                    if hum.MoveDirection.Magnitude > 0 then
+                        chr:TranslateBy(hum.MoveDirection)
+                    end
+                end
+            end)
+        end
+    end
 end
 
 local function showWarning(message)
@@ -599,6 +729,10 @@ local function switchCategory(category)
     InfiniteJumpButton.Visible = false
     FlyLabel.Visible = false
     FlyToggleButton.Visible = false
+    FlySpeedLabel.Visible = false
+    FlySpeedDisplay.Visible = false
+    FlySpeedMinus.Visible = false
+    FlySpeedPlus.Visible = false
     
     if category == "Movement" then
         MovementButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
@@ -616,6 +750,10 @@ local function switchCategory(category)
         AbilityButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
         FlyLabel.Visible = true
         FlyToggleButton.Visible = true
+        FlySpeedLabel.Visible = true
+        FlySpeedDisplay.Visible = true
+        FlySpeedMinus.Visible = true
+        FlySpeedPlus.Visible = true
     end
 end
 
@@ -633,8 +771,10 @@ local function resetAllAbilities()
     
     infiniteJumpEnabled = false
     
-    if flyEnabled then
-        disableFly()
+    if nowe == true then
+        toggleFly()
+        FlyToggleButton.Text = "OFF"
+        FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
     
     if heartbeatConnection then
@@ -663,7 +803,7 @@ heartbeatConnection = RunService.Heartbeat:Connect(function()
     end
 end)
 
--- BUTTON CONNECTIONS
+-- ============ BUTTON CONNECTIONS ============
 MovementButton.MouseButton1Click:Connect(function()
     switchCategory("Movement")
 end)
@@ -715,15 +855,34 @@ InfiniteJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Fly Toggle Button
 FlyToggleButton.MouseButton1Click:Connect(function()
-    if not flyEnabled then
-        enableFly()
+    toggleFly()
+    if nowe then
         FlyToggleButton.Text = "ON"
         FlyToggleButton.BackgroundColor3 = Color3.fromRGB(70, 255, 70)
     else
-        disableFly()
         FlyToggleButton.Text = "OFF"
         FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+    end
+end)
+
+-- Fly Speed Buttons
+FlySpeedPlus.MouseButton1Click:Connect(function()
+    if speeds < 100 then
+        speeds = speeds + 1
+        updateFlySpeed()
+    else
+        showWarning("Fly Speed cannot be more than 100")
+    end
+end)
+
+FlySpeedMinus.MouseButton1Click:Connect(function()
+    if speeds == 1 then
+        showWarning("Fly Speed cannot be less than 1")
+    else
+        speeds = speeds - 1
+        updateFlySpeed()
     end
 end)
 
@@ -760,10 +919,11 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Character Reset Handler
+-- Character Reset Handler (for all features)
 player.CharacterAdded:Connect(function(character)
-    if flyEnabled then
-        disableFly()
+    if nowe then
+        nowe = false
+        FlyControlFrame.Visible = false
         FlyToggleButton.Text = "OFF"
         FlyToggleButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     end
