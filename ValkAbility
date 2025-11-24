@@ -87,7 +87,7 @@ TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Button (UPDATED - Square corners)
+-- Minimize Button
 MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Parent = TopBar
 MinimizeButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
@@ -99,7 +99,9 @@ MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeButton.TextSize = 16
 
--- NO CORNER for square shape (removed UICorner)
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 4)
+MinCorner.Parent = MinimizeButton
 
 -- Exit Button
 ExitButton.Name = "ExitButton"
@@ -350,29 +352,29 @@ WarningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 WarningLabel.TextSize = 10
 WarningLabel.Visible = false
 
--- Minimized Button (UPDATED - Square + RGB Border + VH Text)
+-- ============ MINIMIZED BUTTON (UPDATED - PERSEGI & RGB DI BORDER FRAME) ============
 MinimizedButton.Name = "MinimizedButton"
 MinimizedButton.Parent = ScreenGui
 MinimizedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MinimizedButton.BorderSizePixel = 0
-MinimizedButton.Position = UDim2.new(0.5, -60, 0, 10)
-MinimizedButton.Size = UDim2.new(0, 120, 0, 40)
+MinimizedButton.Position = UDim2.new(0.5, -25, 0, 10) -- Centered for square shape
+MinimizedButton.Size = UDim2.new(0, 50, 0, 50) -- PERSEGI (50x50)
 MinimizedButton.Font = Enum.Font.GothamBold
-MinimizedButton.Text = "VH"  -- Changed to "VH"
-MinimizedButton.TextColor3 = Color3.fromRGB(200, 230, 255)  -- Bluish white color
-MinimizedButton.TextSize = 20  -- Bigger text size
+MinimizedButton.Text = "VH" -- TEXT DIUBAH MENJADI "VH"
+MinimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizedButton.TextSize = 18
 MinimizedButton.Visible = false
 MinimizedButton.Active = true
 MinimizedButton.Draggable = true
 
--- Square corners (no UICorner)
--- NO UICorner applied for square shape
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MinimizedButton
 
--- RGB Border Animation
-UIStroke.Thickness = 3  -- Thicker border
+-- RGB BORDER DI FRAME BUTTON (BUKAN DI TEXT)
+UIStroke.Thickness = 3
 UIStroke.Parent = MinimizedButton
 
--- RGB Animation for Border
+-- RGB Animation (Berlaku di border frame button)
 spawn(function()
     while true do
         for hue = 0, 1, 0.01 do
